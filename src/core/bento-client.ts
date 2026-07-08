@@ -1,7 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { loadCredentials, saveCredentials } from './credentials';
-
-const DEFAULT_BASE_URL = 'http://localhost:3000/api';
+import { DEFAULT_BASE_URL, logger, BentoAuthError } from '../utils';
 
 export class BentoStellarClient {
   public readonly http: AxiosInstance;
@@ -26,7 +25,7 @@ export class BentoStellarClient {
           config.headers['Authorization'] = `Bearer ${creds.jwt_token}`;
         }
       } catch (error) {
-        console.warn('Could not load credentials, sending request without token.');
+        logger.warn('Could not load credentials, sending request without token.');
       }
       return config;
     });
@@ -63,7 +62,7 @@ export class BentoStellarClient {
               return this.http(originalRequest);
             }
           } catch (refreshError) {
-            return Promise.reject(new Error('Failed to auto-refresh token. Agent API Key might be invalid.'));
+            return Promise.reject(new BentoAuthError('Failed to auto-refresh token. Agent API Key might be invalid.'));
           }
         }
         
@@ -72,3 +71,4 @@ export class BentoStellarClient {
     );
   }
 }
+
