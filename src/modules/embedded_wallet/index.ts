@@ -1,11 +1,10 @@
-export * from './types';
 import { BlendServiceClient } from '../../core/bento-client';
 import {
   ApproveTransactionRequest,
   CreateTransactionRequest,
   EmbeddedWalletPosition,
   TransferAssetRequest,
-} from './types';
+} from '../../types';
 
 export class EmbeddedWalletApi {
   constructor(private readonly client: BlendServiceClient) {}

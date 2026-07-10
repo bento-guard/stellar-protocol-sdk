@@ -1,11 +1,10 @@
-export * from './types';
 import { BlendServiceClient } from '../../core/bento-client';
 import {
   ClaimAgentRequest,
   ClaimStatusResponse,
   RegisterAgentRequest,
   RegisterAgentResponse,
-} from './types';
+} from '../../types';
 
 export class AgentIdentityApi {
   constructor(private readonly client: BlendServiceClient) {}

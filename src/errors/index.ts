@@ -15,7 +15,7 @@ export class BentoAuthError extends BentoError {
 export class BentoAPIError extends BentoError {
   public statusCode?: number;
   public details?: unknown;
-  
+
   constructor(message: string, statusCode?: number, details?: unknown) {
     super(message);
     this.name = 'BentoAPIError';

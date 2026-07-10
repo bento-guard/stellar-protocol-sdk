@@ -1,4 +1,3 @@
-export * from './types';
 import { BlendServiceClient } from '../../core/bento-client';
 import {
   LendingPoolActionRequest,
@@ -6,7 +5,7 @@ import {
   LendingPoolInfo,
   LendingPoolReserve,
   LendingPoolSubmitRequest,
-} from './types';
+} from '../../types';
 
 export class LendingPoolApi {
   constructor(private readonly client: BlendServiceClient) {}
