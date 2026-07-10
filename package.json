@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "test": "ts-node test/index.ts"
   },
   "dependencies": {
     "axios": "^1.18.1",

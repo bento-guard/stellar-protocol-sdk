@@ -20,7 +20,7 @@ export enum Version {
 
 export enum Module {
     LENDING_POOL = 'lending-pool',
-    AUTH = 'auth',
+    AUTH = 'agents/auth',
     EMBEDDED_WALLET = 'embedded-wallet',
 }
 
