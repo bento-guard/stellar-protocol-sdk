@@ -1,4 +1,4 @@
-import { BentoStellarClient } from '../../core/bento-client';
+import type { BentoStellarClient } from '../../core/bento-client';
 import { IPosition } from './types';
 
 export async function getPosition(client: BentoStellarClient): Promise<IPosition> {

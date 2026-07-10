@@ -1,4 +1,4 @@
-import { BentoStellarClient } from '../../core/bento-client';
+import type { BentoStellarClient } from '../../core/bento-client';
 import { ITransferRequest } from './types';
 
 export async function transfer(client: BentoStellarClient, request: ITransferRequest): Promise<any> {

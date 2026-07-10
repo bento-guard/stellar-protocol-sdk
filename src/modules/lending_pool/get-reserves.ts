@@ -1,4 +1,4 @@
-import { BentoStellarClient } from '../../core/bento-client';
+import type { BentoStellarClient } from '../../core/bento-client';
 import { IReserves } from './types';
 
 export async function getReserves(client: BentoStellarClient): Promise<IReserves> {

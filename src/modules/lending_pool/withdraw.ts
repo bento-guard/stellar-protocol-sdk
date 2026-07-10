@@ -1,4 +1,4 @@
-import { BentoStellarClient } from '../../core/bento-client';
+import type { BentoStellarClient } from '../../core/bento-client';
 import { IPoolAction } from './types';
 
 export async function withdraw(client: BentoStellarClient, action: IPoolAction): Promise<any> {
