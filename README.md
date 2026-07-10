@@ -1,75 +1,487 @@
-# @bentoguard/sdk-stellar
+# Bento Stellar SDK
 
-SDK cho agent làm việc với backend Bento Stellar theo hướng clean code, tách rõ:
+[![Version](https://img.shields.io/badge/version-1.0.0-blue)](./package.json)
+[![License](https://img.shields.io/badge/license-MIT-green)](#license)
+[![npm](https://img.shields.io/badge/npm-@bentoguard%2Fsdk--stellar-red)](https://www.npmjs.com/package/@bentoguard/sdk-stellar)
+[![Downloads](https://img.shields.io/badge/downloads-<placeholder>-lightgrey)](https://www.npmjs.com/package/@bentoguard/sdk-stellar)
 
-1. `BlendServiceClient`
-2. `Auth` cho agent identities
-3. `Embedded Wallet`
-4. `Lending Pool` / Blend market discovery + transaction flows
-5. `Utils` cho lỗi, logger, cấu hình
+A production-ready TypeScript SDK for AI agents to authenticate, discover markets, manage wallets, and execute transactions against the Bento Stellar backend.
 
-## Cài đặt
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Features](#features)
+- [Installation](#installation)
+- [Requirements](#requirements)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Core Concepts](#core-concepts)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Error Handling](#error-handling)
+- [Best Practices](#best-practices)
+- [API Overview](#api-overview)
+- [Examples](#examples)
+- [FAQ](#faq)
+- [Troubleshooting](#troubleshooting)
+- [Changelog](#changelog)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Introduction
+
+Bento Stellar SDK is the developer-facing client for the Bento Stellar backend. It gives agents a clean, typed way to talk to the backend without hardcoding routes, manually wiring headers, or handling repetitive request concerns in every integration.
+
+The SDK is designed for workflows where an agent needs to authenticate, discover lending markets, inspect wallet state, and execute lending or transfer actions in a predictable sequence.
+
+It is primarily useful for AI agents, backend services, and automation workers that need a stable, well-structured abstraction over Bento Stellar APIs.
+
+Why this SDK exists: it reduces integration complexity, centralizes request behavior, and keeps transaction and wallet flows consistent across projects.
+
+Why it matters: agent workflows become easier to reason about, safer to operate, and simpler to test.
+
+Why this version: the codebase is organized around clean modules, centralized endpoint building, typed contracts, and explicit error handling.
+
+## Features
+
+- Authentication for agent identity workflows
+- Wallet management for embedded wallet operations
+- Lending pool discovery and transaction actions
+- Transaction payload creation and approval flows
+- Typed request/response contracts
+- Centralized endpoint builder
+- Error normalization with status code and response payload
+- Clean module-based API surface
+- TypeScript-first developer experience
+- Test coverage split into unit, integration, and e2e
+
+## Installation
 
 ```bash
 npm install @bentoguard/sdk-stellar
 ```
 
-## Khởi tạo
+## Requirements
+
+- Node.js >= 18
+- TypeScript >= 5
+- Runtime support: Node.js
+- Browser support: not officially targeted yet
+- Network access to the Bento backend
+
+## Quick Start
+
+Why this matters: a developer should be able to install the SDK and call the first API in a few minutes.
 
 ```ts
 import { BlendServiceClient, auth, lendingPool, embeddedWallet } from '@bentoguard/sdk-stellar';
 
-const client = new BlendServiceClient({
-  baseURL: process.env.BENTO_BASE_URL,
+async function main() {
+  const client = new BlendServiceClient({
+    baseURL: process.env.BENTO_BASE_URL ?? 'http://localhost:4001',
+    timeoutMs: 30_000,
+  });
+
+  client.setApiKey(process.env.BENTO_AGENT_API_KEY ?? '');
+  client.setAccessToken(process.env.BENTO_ACCESS_TOKEN ?? '');
+
+  const agentApi = new auth.AgentIdentityApi(client);
+  const poolApi = new lendingPool.LendingPoolApi(client);
+  const walletApi = new embeddedWallet.EmbeddedWalletApi(client);
+
+  const claimStatus = await agentApi.getClaimStatus();
+  const marketInfo = await poolApi.getInfo();
+  const walletPosition = await walletApi.getPosition();
+
+  console.log({
+    claimStatus,
+    marketInfo,
+    walletPosition,
+  });
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
 });
 ```
 
-## Auth
+## Project Structure
 
-```ts
-const agentApi = new auth.AgentIdentityApi(client);
+The SDK is organized by responsibility:
 
-client.setApiKey('bento_sk_xxx');
-
-const status = await agentApi.getClaimStatus();
+```text
+src/
+  constants/         # Endpoint builder, version, module names, config constants
+  core/              # HTTP client and credential store
+  errors/            # SDK error types and error constants
+  modules/
+    auth/            # Agent identity and claim flows
+    lending_pool/    # Market discovery and lending actions
+    embedded_wallet/ # Wallet and transaction flows
+  types/             # Shared TypeScript contracts
+  utils/             # Logger and re-exports
 ```
 
-## Market discovery
+Why this structure: each area maps directly to a product concern, which keeps the SDK discoverable and easy to extend.
+
+## Core Concepts
+
+- `BlendServiceClient`: the shared HTTP client that injects headers and centralizes request behavior.
+- `Session`: the active SDK state carried through credentials and access tokens.
+- `Wallet`: the embedded wallet identity attached to the authenticated user or agent.
+- `Pool`: the lending market domain for discovery and transaction actions.
+- `Asset`: the token or market asset being used in a lending or transfer flow.
+- `Transaction`: a backend-driven operation that may be prepared, approved, or broadcast.
+- `Signer`: the authority that approves or broadcasts a transaction, usually managed by backend infrastructure.
+- `Provider`: the embedded wallet provider implementation.
+- `Network`: the target blockchain environment, currently centered on Stellar.
+
+## Configuration
+
+`BlendServiceClient` accepts the following options:
 
 ```ts
+new BlendServiceClient({
+  baseURL: 'http://localhost:4001',
+  timeoutMs: 30_000,
+});
+```
+
+- `baseURL`: backend base URL
+- `timeoutMs`: request timeout in milliseconds
+- `tokenStore`: custom credential store implementation
+
+Environment variables:
+
+- `BENTO_BASE_URL`
+- `BENTO_AGENT_API_KEY`
+- `BENTO_ACCESS_TOKEN`
+
+Endpoint building is handled through:
+
+```ts
+buildEndpoint(Version.Version2, Module.EMBEDDED_WALLET, 'position');
+```
+
+## Usage
+
+### Initialize SDK
+
+```ts
+import { BlendServiceClient } from '@bentoguard/sdk-stellar';
+
+const client = new BlendServiceClient();
+```
+
+### Login
+
+```ts
+import { auth } from '@bentoguard/sdk-stellar';
+
+const agentApi = new auth.AgentIdentityApi(client);
+const claimStatus = await agentApi.getClaimStatus();
+```
+
+### Create Wallet
+
+```ts
+import { embeddedWallet } from '@bentoguard/sdk-stellar';
+
+const walletApi = new embeddedWallet.EmbeddedWalletApi(client);
+const result = await walletApi.createTransaction({
+  wallet_locator: 'email:agent@example.com',
+  params: {
+    to: 'GABC...',
+    amount: '10',
+  },
+});
+```
+
+### Get Balance
+
+```ts
+const position = await walletApi.getPosition();
+console.log(position);
+```
+
+### Send Transaction
+
+```ts
+await walletApi.transfer({
+  wallet_locator: 'email:agent@example.com',
+  toAddress: 'GABC...',
+  tokenId: 'USDC',
+  amount: '25',
+});
+```
+
+### Estimate / Discover Market
+
+```ts
+import { lendingPool } from '@bentoguard/sdk-stellar';
+
 const poolApi = new lendingPool.LendingPoolApi(client);
 
-const markets = await poolApi.discoverMarkets();
 const info = await poolApi.getInfo();
 const reserves = await poolApi.getReserves();
+const markets = await poolApi.discoverMarkets();
 ```
 
-## Transaction flow
+### Retry
+
+The SDK normalizes HTTP errors, so retry logic should live in your application layer or orchestration layer.
+
+### Disconnect
+
+If you use a custom credential store, clear tokens when the session is no longer valid:
 
 ```ts
-const walletApi = new embeddedWallet.EmbeddedWalletApi(client);
+client.clearCredentials();
+```
 
-const walletPosition = await walletApi.getPosition();
-const depositResult = await poolApi.deposit({
+## Error Handling
+
+Why this matters: agent workflows fail for many reasons, and every failure should be explainable.
+
+```ts
+import { utils } from '@bentoguard/sdk-stellar';
+
+try {
+  await poolApi.borrow({
+    email: 'agent@example.com',
+    assetId: 'USDC',
+    amount: '50',
+  });
+} catch (error) {
+  if (error instanceof utils.BentoAuthError) {
+    console.error('Authentication failed');
+  } else if (error instanceof utils.BentoAPIError) {
+    console.error('API status:', error.statusCode);
+    console.error('API response:', error.response);
+  } else if (error instanceof utils.BentoError) {
+    console.error('SDK error:', error.message);
+  } else {
+    console.error('Unknown error:', error);
+  }
+}
+```
+
+Supported error categories:
+
+- `BentoAuthError`
+- `BentoAPIError`
+- `BentoConfigError`
+- `BentoError`
+
+## Best Practices
+
+- Do not hardcode secrets or private keys.
+- Use environment variables for API keys and base URLs.
+- Reuse a single `BlendServiceClient` instance per process.
+- Validate input before calling transaction endpoints.
+- Keep retry policies outside the SDK unless you need custom transport behavior.
+- Clear credentials when the session ends or becomes invalid.
+
+## API Overview
+
+### Client
+
+Shared HTTP client and credential lifecycle management.
+
+### Auth
+
+Agent identity and claim status operations backed by `/v2/agents/auth/*`.
+
+### Lending Pool
+
+Market discovery and lending actions backed by `/v2/lending-pool/*`.
+
+### Embedded Wallet
+
+Wallet position and transaction orchestration backed by `/v2/embedded-wallet/*`.
+
+### Utils
+
+Logger helpers, constants, endpoint builder, and error exports.
+
+### Types
+
+Shared request and response contracts for SDK consumers.
+
+## Examples
+
+### Simple Example
+
+```ts
+const client = new BlendServiceClient();
+const poolApi = new lendingPool.LendingPoolApi(client);
+
+console.log(await poolApi.getInfo());
+```
+
+### Advanced Example
+
+```ts
+const client = new BlendServiceClient({
+  baseURL: process.env.BENTO_BASE_URL,
+  timeoutMs: 45_000,
+});
+
+client.setApiKey(process.env.BENTO_AGENT_API_KEY ?? '');
+client.setAccessToken(process.env.BENTO_ACCESS_TOKEN ?? '');
+
+const agentApi = new auth.AgentIdentityApi(client);
+const walletApi = new embeddedWallet.EmbeddedWalletApi(client);
+const poolApi = new lendingPool.LendingPoolApi(client);
+
+const [claimStatus, markets, position] = await Promise.all([
+  agentApi.getClaimStatus(),
+  poolApi.discoverMarkets(),
+  walletApi.getPosition(),
+]);
+
+console.log({ claimStatus, markets, position });
+```
+
+### Lending
+
+```ts
+await poolApi.deposit({
   email: 'agent@example.com',
   assetId: 'USDC',
   amount: '100',
 });
 ```
 
-## Error handling
+### Borrow
 
 ```ts
-import { utils } from '@bentoguard/sdk-stellar';
-
-try {
-  await poolApi.borrow({ email: 'agent@example.com', assetId: 'USDC', amount: '50' });
-} catch (error) {
-  if (error instanceof utils.BentoAuthError) {
-    // refresh / reconfigure credentials
-  }
-  if (error instanceof utils.BentoAPIError) {
-    // inspect error.statusCode and error.details
-  }
-}
+await poolApi.borrow({
+  email: 'agent@example.com',
+  assetId: 'USDC',
+  amount: '25',
+});
 ```
+
+### Withdraw
+
+```ts
+await poolApi.withdraw({
+  email: 'agent@example.com',
+  assetId: 'USDC',
+  amount: '10',
+});
+```
+
+### Batch Transaction
+
+```ts
+await poolApi.submit({
+  email: 'agent@example.com',
+  requests: [
+    { actionType: 'REPAY', assetId: 'USDC', amount: '25' },
+    { actionType: 'WITHDRAW', assetId: 'USDC', amount: '10' },
+  ],
+});
+```
+
+## FAQ
+
+**1. Is this SDK production ready?**  
+It is structured for production use, but final readiness depends on your backend deployment and environment setup.
+
+**2. Which network does it target?**  
+The current codebase is centered on Stellar and versioned backend routes.
+
+**3. Does it support browser usage?**  
+It is primarily designed for Node.js runtimes.
+
+**4. How does authentication work?**  
+Through agent API key and access token handling managed by `BlendServiceClient`.
+
+**5. Where do I put my API key?**  
+Use environment variables or a custom token store.
+
+**6. Can I replace the token store?**  
+Yes, pass a custom `tokenStore` to `BlendServiceClient`.
+
+**7. Does the SDK retry requests automatically?**  
+Not by default. Handle retries at your application layer.
+
+**8. How are errors represented?**  
+Through standardized SDK error classes, including status code and response payload.
+
+**9. What if my backend base URL changes?**  
+Set `baseURL` or `BENTO_BASE_URL`.
+
+**10. Where should I start reading the source?**  
+Start with `src/core/blend-service-client.ts`, then the module folders.
+
+## Troubleshooting
+
+### Module not found
+
+Make sure your import path matches the exported module namespace.
+
+### RPC timeout
+
+Increase `timeoutMs` or check backend latency and network connectivity.
+
+### Invalid signature
+
+Verify the authentication flow and the agent credentials being used.
+
+### Authentication failed
+
+Check `BENTO_AGENT_API_KEY`, access token state, and backend auth status.
+
+### Insufficient balance
+
+Inspect wallet position and lending pool reserves before sending the action.
+
+### Wrong network
+
+Ensure your backend and wallet data are targeting the same network.
+
+### Endpoint mismatch
+
+Use `buildEndpoint()` and the shared `Module` and `Version` constants rather than hardcoding strings.
+
+## Changelog
+
+Track releases through:
+
+- Git tags
+- GitHub releases
+- `package.json` version
+
+Recommended release notes location:
+
+- `CHANGELOG.md` `<TODO>`
+
+## Contributing
+
+Contributions are welcome.
+
+Suggested workflow:
+
+1. Fork or branch from the repository.
+2. Make your changes in a small, focused patch.
+3. Run tests:
+
+```bash
+npm run test
+```
+
+4. Run build:
+
+```bash
+npm run build
+```
+
+5. Open a pull request with a clear description of the SDK surface you changed.
+
+## License
+
+MIT <TODO: confirm final license in package metadata>
