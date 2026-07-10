@@ -1,3 +1,5 @@
+export * from './constants';
+
 export class BentoError extends Error {
   constructor(message: string) {
     super(message);
@@ -14,13 +16,13 @@ export class BentoAuthError extends BentoError {
 
 export class BentoAPIError extends BentoError {
   public statusCode?: number;
-  public details?: unknown;
+  public response?: unknown;
 
-  constructor(message: string, statusCode?: number, details?: unknown) {
+  constructor(message: string, statusCode?: number, response?: unknown) {
     super(message);
     this.name = 'BentoAPIError';
     this.statusCode = statusCode;
-    this.details = details;
+    this.response = response;
   }
 }
 
@@ -29,4 +31,8 @@ export class BentoConfigError extends BentoError {
     super(message);
     this.name = 'BentoConfigError';
   }
+}
+
+export function isBentoError(error: unknown): error is BentoError {
+  return error instanceof BentoError;
 }
