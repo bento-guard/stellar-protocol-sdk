@@ -2,8 +2,8 @@
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue)](./package.json)
 [![License](https://img.shields.io/badge/license-MIT-green)](#license)
-[![npm](https://img.shields.io/badge/npm-@bentoguard%2Fsdk--stellar-red)](https://www.npmjs.com/package/@bentoguard/sdk-stellar)
-[![Downloads](https://img.shields.io/badge/downloads-<placeholder>-lightgrey)](https://www.npmjs.com/package/@bentoguard/sdk-stellar)
+[![npm](https://img.shields.io/badge/npm-@bentoguard%2Fprotocol--sdk-red)](https://www.npmjs.com/package/@bentoguard/protocol-sdk)
+[![Downloads](https://img.shields.io/badge/downloads-<placeholder>-lightgrey)](https://www.npmjs.com/package/@bentoguard/protocol-sdk)
 
 A production-ready TypeScript SDK for AI agents to authenticate, discover markets, manage wallets, and execute transactions against the Bento Stellar backend.
 
@@ -30,26 +30,18 @@ A production-ready TypeScript SDK for AI agents to authenticate, discover market
 
 ## Introduction
 
-Bento Stellar SDK is the developer-facing client for the Bento Stellar backend. It gives agents a clean, typed way to talk to the backend without hardcoding routes, manually wiring headers, or handling repetitive request concerns in every integration.
+Bento Stellar SDK is the agent-facing client for the Bento Stellar backend. It gives AI agents a typed way to talk to the backend without hardcoding routes or repeating request concerns in every integration.
 
-The SDK is designed for workflows where an agent needs to authenticate, discover lending markets, inspect wallet state, and execute lending or transfer actions in a predictable sequence.
-
-Note: current wallet and Blend actions are still backed by user-scoped `email` / `wallet_locator` routing in the backend. For the agent-scoped flow, the backend should resolve wallet ownership from `api_key -> agent_id -> user_id` rather than letting the client choose a wallet directly.
-The SDK now exposes both user-scoped and agent-scoped helpers so you can keep the legacy path while migrating agent flows to backend-resolved ownership.
+The SDK is designed for workflows where an agent needs to check claim state, inspect wallet position, read Blend market state, and execute lending or transfer actions in a predictable sequence.
 
 It is primarily useful for AI agents, backend services, and automation workers that need a stable, well-structured abstraction over Bento Stellar APIs.
 
-Why this SDK exists: it reduces integration complexity, centralizes request behavior, and keeps transaction and wallet flows consistent across projects.
-
-Why it matters: agent workflows become easier to reason about, safer to operate, and simpler to test.
-
-Why this version: the codebase is organized around clean modules, centralized endpoint building, typed contracts, and explicit error handling.
-
 ## Features
 
-- Authentication for agent identity workflows
-- Wallet management for embedded wallet operations
-- Lending pool discovery and transaction actions
+- Agent identity and claim workflows
+- Wallet position and transaction flows
+- Lending pool read and execution actions
+- Agent-scoped variants for backend-resolved ownership
 - Transaction payload creation and approval flows
 - Typed request/response contracts
 - Centralized endpoint builder
@@ -61,7 +53,7 @@ Why this version: the codebase is organized around clean modules, centralized en
 ## Installation
 
 ```bash
-npm install @bentoguard/sdk-stellar
+npm install @bentoguard/protocol-sdk
 ```
 
 ## Requirements
@@ -77,7 +69,7 @@ npm install @bentoguard/sdk-stellar
 Why this matters: a developer should be able to install the SDK and call the first API in a few minutes.
 
 ```ts
-import { BlendServiceClient, auth, lendingPool, embeddedWallet } from '@bentoguard/sdk-stellar';
+import { BlendServiceClient, auth, lendingPool, embeddedWallet } from '@bentoguard/protocol-sdk';
 
 async function main() {
   const client = new BlendServiceClient({
@@ -89,17 +81,10 @@ async function main() {
   client.setAccessToken(process.env.BENTO_ACCESS_TOKEN ?? '');
 
   const agentApi = new auth.AgentIdentityApi(client);
-  const poolApi = new lendingPool.LendingPoolApi(client);
-  const walletApi = new embeddedWallet.EmbeddedWalletApi(client);
-
   const claimStatus = await agentApi.getClaimStatus();
-  const marketInfo = await poolApi.getInfo();
-  const walletPosition = await walletApi.getPosition();
 
   console.log({
     claimStatus,
-    marketInfo,
-    walletPosition,
   });
 }
 
@@ -172,7 +157,7 @@ buildEndpoint(Version.Version2, Module.EMBEDDED_WALLET, 'position');
 ### Initialize SDK
 
 ```ts
-import { BlendServiceClient } from '@bentoguard/sdk-stellar';
+import { BlendServiceClient } from '@bentoguard/protocol-sdk';
 
 const client = new BlendServiceClient();
 ```
@@ -180,19 +165,18 @@ const client = new BlendServiceClient();
 ### Login
 
 ```ts
-import { auth } from '@bentoguard/sdk-stellar';
+import { auth } from '@bentoguard/protocol-sdk';
 
 const agentApi = new auth.AgentIdentityApi(client);
 const claimStatus = await agentApi.getClaimStatus();
 ```
 
-### Create Wallet
+### Create Wallet Draft
 
 ```ts
-import { embeddedWallet } from '@bentoguard/sdk-stellar';
+import { embeddedWallet } from '@bentoguard/protocol-sdk';
 
-const walletApi = new embeddedWallet.EmbeddedWalletApi(client);
-const result = await walletApi.createTransaction({
+const result = await embeddedWallet.createTransaction(client, {
   wallet_locator: 'email:agent@example.com',
   params: {
     to: 'GABC...',
@@ -204,49 +188,46 @@ const result = await walletApi.createTransaction({
 ### Get Balance
 
 ```ts
-const position = await walletApi.getPosition();
+const position = await embeddedWallet.getPosition(client);
 console.log(position);
 ```
 
 ### Agent Wallet Balance
 
 ```ts
-const agentPosition = await walletApi.getAgentPosition();
+const agentPosition = await embeddedWallet.getAgentPosition(client);
 console.log(agentPosition);
 ```
 
 ### Send Transaction
 
 ```ts
-await walletApi.transfer({
+await embeddedWallet.transfer(client, {
   wallet_locator: 'email:agent@example.com',
   toAddress: 'GABC...',
   tokenId: 'USDC',
   amount: '25',
 });
 
-await walletApi.approveTransaction({
+await embeddedWallet.approveTransaction(client, {
   wallet_locator: 'email:agent@example.com',
   txId: 'tx_123',
 });
 
-await walletApi.transferAgentAsset({
+await embeddedWallet.transferAgentAsset(client, {
   toAddress: 'GABC...',
   tokenId: 'USDC',
   amount: '25',
 });
 ```
 
-### Estimate / Discover Market
+### Read Market State
 
 ```ts
-import { lendingPool } from '@bentoguard/sdk-stellar';
+import { lendingPool } from '@bentoguard/protocol-sdk';
 
-const poolApi = new lendingPool.LendingPoolApi(client);
-
-const info = await poolApi.getInfo();
-const reserves = await poolApi.getReserves();
-const markets = await poolApi.discoverMarkets();
+const info = await lendingPool.getInfo(client);
+const reserves = await lendingPool.getReserves(client);
 ```
 
 ### Retry
@@ -266,10 +247,10 @@ client.clearCredentials();
 Why this matters: agent workflows fail for many reasons, and every failure should be explainable.
 
 ```ts
-import { utils } from '@bentoguard/sdk-stellar';
+import { utils } from '@bentoguard/protocol-sdk';
 
 try {
-  await poolApi.borrow({
+  await lendingPool.borrow(client, {
     email: 'agent@example.com',
     assetId: 'USDC',
     amount: '50',
@@ -336,9 +317,8 @@ Shared request and response contracts for SDK consumers.
 
 ```ts
 const client = new BlendServiceClient();
-const poolApi = new lendingPool.LendingPoolApi(client);
 
-console.log(await poolApi.getInfo());
+console.log(await lendingPool.getInfo(client));
 ```
 
 ### Advanced Example
@@ -353,13 +333,11 @@ client.setApiKey(process.env.BENTO_AGENT_API_KEY ?? '');
 client.setAccessToken(process.env.BENTO_ACCESS_TOKEN ?? '');
 
 const agentApi = new auth.AgentIdentityApi(client);
-const walletApi = new embeddedWallet.EmbeddedWalletApi(client);
-const poolApi = new lendingPool.LendingPoolApi(client);
 
 const [claimStatus, markets, position] = await Promise.all([
   agentApi.getClaimStatus(),
-  poolApi.discoverMarkets(),
-  walletApi.getPosition(),
+  lendingPool.getReserves(client),
+  embeddedWallet.getPosition(client),
 ]);
 
 console.log({ claimStatus, markets, position });
@@ -368,7 +346,7 @@ console.log({ claimStatus, markets, position });
 ### Lending
 
 ```ts
-await poolApi.deposit({
+await lendingPool.deposit(client, {
   email: 'agent@example.com',
   assetId: 'USDC',
   amount: '100',
@@ -378,7 +356,7 @@ await poolApi.deposit({
 ### Borrow
 
 ```ts
-await poolApi.borrow({
+await lendingPool.borrow(client, {
   email: 'agent@example.com',
   assetId: 'USDC',
   amount: '25',
@@ -388,7 +366,7 @@ await poolApi.borrow({
 ### Withdraw
 
 ```ts
-await poolApi.withdraw({
+await lendingPool.withdraw(client, {
   email: 'agent@example.com',
   assetId: 'USDC',
   amount: '10',
@@ -398,7 +376,7 @@ await poolApi.withdraw({
 ### Batch Transaction
 
 ```ts
-await poolApi.submit({
+await lendingPool.submit(client, {
   email: 'agent@example.com',
   requests: [
     { actionType: 'REPAY', assetId: 'USDC', amount: '25' },
@@ -406,7 +384,7 @@ await poolApi.submit({
   ],
 });
 
-await poolApi.faucet({
+await lendingPool.faucet(client, {
   email: 'agent@example.com',
 });
 ```
@@ -414,12 +392,12 @@ await poolApi.faucet({
 ### Agent Lending Actions
 
 ```ts
-await poolApi.getAgentPosition();
-await poolApi.depositForAgent({
+await lendingPool.getAgentPosition(client);
+await lendingPool.depositForAgent(client, {
   assetId: 'USDC',
   amount: '100',
 });
-await poolApi.submitForAgent({
+await lendingPool.submitForAgent(client, {
   requests: [
     { actionType: 'REPAY', assetId: 'USDC', amount: '25' },
     { actionType: 'WITHDRAW', assetId: 'USDC', amount: '10' },
