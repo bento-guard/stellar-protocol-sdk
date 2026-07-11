@@ -34,6 +34,9 @@ Bento Stellar SDK is the developer-facing client for the Bento Stellar backend. 
 
 The SDK is designed for workflows where an agent needs to authenticate, discover lending markets, inspect wallet state, and execute lending or transfer actions in a predictable sequence.
 
+Note: current wallet and Blend actions are still backed by user-scoped `email` / `wallet_locator` routing in the backend. For the agent-scoped flow, the backend should resolve wallet ownership from `api_key -> agent_id -> user_id` rather than letting the client choose a wallet directly.
+The SDK now exposes both user-scoped and agent-scoped helpers so you can keep the legacy path while migrating agent flows to backend-resolved ownership.
+
 It is primarily useful for AI agents, backend services, and automation workers that need a stable, well-structured abstraction over Bento Stellar APIs.
 
 Why this SDK exists: it reduces integration complexity, centralizes request behavior, and keeps transaction and wallet flows consistent across projects.
@@ -205,6 +208,13 @@ const position = await walletApi.getPosition();
 console.log(position);
 ```
 
+### Agent Wallet Balance
+
+```ts
+const agentPosition = await walletApi.getAgentPosition();
+console.log(agentPosition);
+```
+
 ### Send Transaction
 
 ```ts
@@ -218,6 +228,12 @@ await walletApi.transfer({
 await walletApi.approveTransaction({
   wallet_locator: 'email:agent@example.com',
   txId: 'tx_123',
+});
+
+await walletApi.transferAgentAsset({
+  toAddress: 'GABC...',
+  tokenId: 'USDC',
+  amount: '25',
 });
 ```
 
@@ -392,6 +408,22 @@ await poolApi.submit({
 
 await poolApi.faucet({
   email: 'agent@example.com',
+});
+```
+
+### Agent Lending Actions
+
+```ts
+await poolApi.getAgentPosition();
+await poolApi.depositForAgent({
+  assetId: 'USDC',
+  amount: '100',
+});
+await poolApi.submitForAgent({
+  requests: [
+    { actionType: 'REPAY', assetId: 'USDC', amount: '25' },
+    { actionType: 'WITHDRAW', assetId: 'USDC', amount: '10' },
+  ],
 });
 ```
 

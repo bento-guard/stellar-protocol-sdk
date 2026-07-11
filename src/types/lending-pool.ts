@@ -1,12 +1,14 @@
 export type LendingActionType = 'DEPOSIT' | 'BORROW' | 'REPAY' | 'WITHDRAW' | 'SUBMIT' | 'FAUCET';
 
 export interface LendingPoolActionRequest {
+  /** User-scoped email in the current backend flow. Agent flows should not own this value directly. */
   email: string;
   assetId: string;
   amount: string;
 }
 
 export interface LendingPoolSubmitRequest {
+  /** User-scoped email in the current backend flow. Agent flows should not own this value directly. */
   email: string;
   requests: Array<{
     actionType: Exclude<LendingActionType, 'SUBMIT' | 'FAUCET'>;
@@ -17,6 +19,21 @@ export interface LendingPoolSubmitRequest {
 
 export interface LendingPoolFaucetRequest {
   email: string;
+}
+
+export interface AgentPoolActionRequest {
+  assetId: string;
+  amount: string;
+}
+
+export interface AgentSubmitRequest {
+  actionType: Exclude<LendingActionType, 'SUBMIT' | 'FAUCET'>;
+  assetId: string;
+  amount: string;
+}
+
+export interface AgentSubmitActionRequest {
+  requests: AgentSubmitRequest[];
 }
 
 export interface LendingPoolInfo {

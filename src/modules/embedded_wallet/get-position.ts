@@ -8,3 +8,7 @@ const EMBEDDED_WALLET_BASE = buildEndpoint(Version.Version2, Module.EMBEDDED_WAL
 export async function getPosition(client: BentoStellarClient): Promise<IPosition> {
   return getJson<IPosition>(client, `${EMBEDDED_WALLET_BASE}/position`, 'Failed to fetch embedded wallet position');
 }
+
+export async function getAgentPosition(client: BentoStellarClient): Promise<IPosition> {
+  return getJson<IPosition>(client, `${EMBEDDED_WALLET_BASE}/agent/position`, 'Failed to fetch agent embedded wallet position');
+}
