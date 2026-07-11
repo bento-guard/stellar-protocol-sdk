@@ -214,6 +214,11 @@ await walletApi.transfer({
   tokenId: 'USDC',
   amount: '25',
 });
+
+await walletApi.approveTransaction({
+  wallet_locator: 'email:agent@example.com',
+  txId: 'tx_123',
+});
 ```
 
 ### Estimate / Discover Market
@@ -383,6 +388,10 @@ await poolApi.submit({
     { actionType: 'REPAY', assetId: 'USDC', amount: '25' },
     { actionType: 'WITHDRAW', assetId: 'USDC', amount: '10' },
   ],
+});
+
+await poolApi.faucet({
+  email: 'agent@example.com',
 });
 ```
 

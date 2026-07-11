@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import { BentoAPIError, BentoAuthError, DEFAULT_BASE_URL, DEFAULT_TIMEOUT_MS, logger } from '../utils';
+import { BentoAPIError, BentoAuthError, DEFAULT_BASE_URL, DEFAULT_TIMEOUT_MS } from '../utils';
 import { BentoCredentials, FileTokenStore, TokenStore } from './auth-store';
 
 export interface BlendServiceClientOptions {

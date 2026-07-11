@@ -6,6 +6,7 @@ import {
   RegisterAgentRequest,
   RegisterAgentResponse,
 } from '../../types';
+import { getJson, postJson } from '../../utils/request';
 
 const AUTH_BASE = buildEndpoint(Version.Version2, Module.AUTH);
 
@@ -13,23 +14,33 @@ export class AgentIdentityApi {
   constructor(private readonly client: BlendServiceClient) {}
 
   registerAgent(payload: RegisterAgentRequest): Promise<RegisterAgentResponse> {
-    return this.client.http.post(`${AUTH_BASE}/register`, payload).then((response) => response.data);
+    return postJson<RegisterAgentResponse, RegisterAgentRequest>(this.client, `${AUTH_BASE}/register`, payload, 'Failed to register agent');
   }
 
   getClaimStatus(): Promise<ClaimStatusResponse> {
-    return this.client.http.get(`${AUTH_BASE}/claim/status`).then((response) => response.data);
+    return getJson<ClaimStatusResponse>(this.client, `${AUTH_BASE}/claim/status`, 'Failed to fetch claim status');
   }
 
   regenerateClaimToken(): Promise<{ claimToken: string; claimUrl: string; message: string; expiresIn: number }> {
-    return this.client.http.post(`${AUTH_BASE}/claim/regenerate`).then((response) => response.data);
+    return postJson<{ claimToken: string; claimUrl: string; message: string; expiresIn: number }, undefined>(
+      this.client,
+      `${AUTH_BASE}/claim/regenerate`,
+      undefined,
+      'Failed to regenerate claim token',
+    );
   }
 
   claimAgent(payload: ClaimAgentRequest): Promise<{ success: boolean; message: string; agentId: string }> {
-    return this.client.http.post(`${AUTH_BASE}/claim/verify`, payload).then((response) => response.data);
+    return postJson<{ success: boolean; message: string; agentId: string }, ClaimAgentRequest>(
+      this.client,
+      `${AUTH_BASE}/claim/verify`,
+      payload,
+      'Failed to claim agent',
+    );
   }
 
   getMyAgents(): Promise<{ items: unknown[]; total: number }> {
-    return this.client.http.get(`${AUTH_BASE}/me`).then((response) => response.data);
+    return getJson<{ items: unknown[]; total: number }>(this.client, `${AUTH_BASE}/me`, 'Failed to fetch claimed agents');
   }
 }
 

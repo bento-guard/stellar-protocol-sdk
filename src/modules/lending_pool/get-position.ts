@@ -1,15 +1,9 @@
 import type { BentoStellarClient } from '../../core/bento-client';
 import { Module, Version, buildEndpoint } from '../../constants';
-import { BentoAPIError, isBentoError } from '../../errors';
+import { getJson } from '../../utils/request';
 
 const LENDING_POOL_BASE = buildEndpoint(Version.Version2, Module.LENDING_POOL);
 
 export async function getPosition(client: BentoStellarClient): Promise<any> {
-  try {
-    const response = await client.http.get(`${LENDING_POOL_BASE}/position`);
-    return response.data;
-  } catch (error) {
-    if (isBentoError(error)) throw error;
-    throw new BentoAPIError('Failed to fetch lending pool position', undefined, error);
-  }
+  return getJson(client, `${LENDING_POOL_BASE}/position`, 'Failed to fetch lending pool position');
 }

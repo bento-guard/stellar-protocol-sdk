@@ -9,6 +9,8 @@ import { deposit } from '../../src/modules/lending_pool/deposit';
 import { borrow } from '../../src/modules/lending_pool/borrow';
 import { repay } from '../../src/modules/lending_pool/repay';
 import { withdraw } from '../../src/modules/lending_pool/withdraw';
+import { submit as submitPool } from '../../src/modules/lending_pool/submit';
+import { faucet as faucetPool } from '../../src/modules/lending_pool/faucet';
 import { runSuite, createMockHttp, expectEqual } from '../helpers';
 
 export async function runE2ETests(): Promise<void> {
@@ -25,12 +27,25 @@ export async function runE2ETests(): Promise<void> {
         await getLendingReserves(client);
         await getWalletPosition(client);
         await createTransaction(client, { wallet_locator: 'email:a@b.com', params: {} });
-        await approveTransaction(client, 'tx_1');
-        await transfer(client, { asset: 'USDC', amount: '10', destination: 'GABC' });
+        await approveTransaction(client, { wallet_locator: 'email:a@b.com', txId: 'tx_1' });
+        await transfer(client, {
+          wallet_locator: 'email:a@b.com',
+          toAddress: 'GABC',
+          tokenId: 'USDC',
+          amount: '10',
+        });
         await deposit(client, { email: 'a@b.com', assetId: 'USDC', amount: '100' });
         await borrow(client, { email: 'a@b.com', assetId: 'USDC', amount: '20' });
         await repay(client, { email: 'a@b.com', assetId: 'USDC', amount: '20' });
         await withdraw(client, { email: 'a@b.com', assetId: 'USDC', amount: '10' });
+        await submitPool(client, {
+          email: 'a@b.com',
+          requests: [
+            { actionType: 'DEPOSIT', assetId: 'USDC', amount: '50' },
+            { actionType: 'WITHDRAW', assetId: 'USDC', amount: '10' },
+          ],
+        });
+        await faucetPool(client, { email: 'a@b.com' });
 
         expectEqual(http.getCalls.map((call) => call.url), [
           '/v2/agents/auth/claim/status',
@@ -47,6 +62,8 @@ export async function runE2ETests(): Promise<void> {
           '/v2/lending-pool/borrow',
           '/v2/lending-pool/repay',
           '/v2/lending-pool/withdraw',
+          '/v2/lending-pool/submit',
+          '/v2/lending-pool/faucet',
         ]);
       },
     },

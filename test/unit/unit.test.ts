@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { buildEndpoint, Module, Version } from '../../src/constants';
 import { BentoAPIError, BentoErrorStatusCode } from '../../src/errors';
+import { FileTokenStore } from '../../src/core/auth-store';
 import { runSuite, expectEqual } from '../helpers';
 
 export async function runUnitTests(): Promise<void> {
@@ -22,6 +26,36 @@ export async function runUnitTests(): Promise<void> {
         expectEqual(error.statusCode, BentoErrorStatusCode.BAD_REQUEST);
         expectEqual(error.response, response);
         assert.equal(error.message, 'failed');
+      },
+    },
+    {
+      name: 'FileTokenStore persists and clears credentials',
+      run: () => {
+        const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bento-sdk-'));
+        const cwd = process.cwd();
+        process.chdir(tempDir);
+
+        try {
+          const store = new FileTokenStore('.bento-credentials');
+          store.save({
+            agentApiKey: 'bento_sk_test',
+            accessToken: 'access-token',
+            refreshToken: 'refresh-token',
+          });
+
+          const loaded = store.load();
+          expectEqual(loaded, {
+            agentApiKey: 'bento_sk_test',
+            accessToken: 'access-token',
+            refreshToken: 'refresh-token',
+          });
+
+          store.clear();
+          expectEqual(fs.existsSync(path.join(tempDir, '.bento-credentials')), false);
+        } finally {
+          process.chdir(cwd);
+          fs.rmSync(tempDir, { recursive: true, force: true });
+        }
       },
     },
   ]);

@@ -41,7 +41,12 @@ export class FileTokenStore implements TokenStore {
   save(credentials: BentoCredentials): void {
     const filePath = resolvePath(this.fileName);
     try {
-      fs.writeFileSync(filePath, JSON.stringify(credentials, null, 2), 'utf-8');
+      fs.writeFileSync(filePath, JSON.stringify(credentials, null, 2), { encoding: 'utf-8', mode: 0o600 });
+      try {
+        fs.chmodSync(filePath, 0o600);
+      } catch {
+        // Best-effort hardening; some platforms ignore POSIX-style permissions.
+      }
     } catch (error: any) {
       throw new BentoError(`Failed to write credentials: ${error.message}`);
     }
