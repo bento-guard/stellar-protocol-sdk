@@ -83,8 +83,8 @@ export async function runE2ETests(): Promise<void> {
 
         expectEqual(http.postCalls.map((call) => call.url), [
           '/v2/embedded-wallet/transaction/create',
-          '/v2/embedded-wallet/transaction/approve',
           '/v2/embedded-wallet/agent/transaction/create',
+          '/v2/embedded-wallet/transaction/approve',
           '/v2/embedded-wallet/agent/transaction/approve',
           '/v2/embedded-wallet/transfer',
           '/v2/embedded-wallet/agent/transfer',

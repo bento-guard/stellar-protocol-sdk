@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as os from 'os';
 import * as path from 'path';
 import { CREDENTIALS_FILE } from '../utils';
 import { BentoError } from '../utils';
@@ -17,9 +16,7 @@ export interface TokenStore {
 }
 
 function resolvePath(fileName = CREDENTIALS_FILE): string {
-  const cwdPath = path.join(process.cwd(), fileName);
-  if (fs.existsSync(cwdPath)) return cwdPath;
-  return path.join(os.homedir(), fileName);
+  return path.join(process.cwd(), fileName);
 }
 
 export class FileTokenStore implements TokenStore {
