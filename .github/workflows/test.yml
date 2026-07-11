@@ -1,0 +1,30 @@
+name: CI - Test & Validate
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.15.0"
+
+      - name: Install dependencies
+        working-directory: stellar-protocol-sdk
+        run: npm ci
+
+      - name: Build
+        working-directory: stellar-protocol-sdk
+        run: npm run build
+
+      - name: Run Tests
+        working-directory: stellar-protocol-sdk
+        run: npm test
