@@ -19,15 +19,12 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        working-directory: stellar-protocol-sdk
         run: npm ci
 
       - name: Build
-        working-directory: stellar-protocol-sdk
         run: npm run build
 
       - name: Publish to NPM
-        working-directory: stellar-protocol-sdk
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if [[ "$VERSION" == *"-"* ]]; then
