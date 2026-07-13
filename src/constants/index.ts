@@ -11,20 +11,20 @@ export enum BentoEnviroment {
 
 export enum Relayer {
   PRODUCTION = '',
-  DEVELOPMENT = '',
+  DEVELOPMENT = 'https://api.dev.bentoguard.xyz',
   LOCAL = 'http://localhost:4001',
 }
 
 export enum Version {
-    Version1 = 'v1',
-    Version2 = 'v2',
+  Version1 = 'v1',
+  Version2 = 'v2',
 }
 
 export enum Module {
-    LENDING_POOL = 'lending-pool',
-    AUTH = 'agents/auth',
-    EMBEDDED_WALLET = 'embedded-wallet',
-    JOBS = 'jobs',
+  LENDING_POOL = 'lending-pool',
+  AUTH = 'agents/auth',
+  EMBEDDED_WALLET = 'embedded-wallet',
+  JOBS = 'jobs',
 }
 
 export const NETWORK_CONFIG: Record<BentoEnviroment, { endpoint: string; defaultTimeout: number }> = {
@@ -43,7 +43,7 @@ export const NETWORK_CONFIG: Record<BentoEnviroment, { endpoint: string; default
 };
 
 export const DEFAULT_BASE_URL =
-  NETWORK_CONFIG[BentoEnviroment.LOCAL].endpoint;
+  NETWORK_CONFIG[BentoEnviroment.DEV].endpoint;
 
 export const buildEndpoint = (version: Version, module: Module, path = ''): string => {
   const suffix = path ? `/${path.replace(/^\/+/, '')}` : '';
