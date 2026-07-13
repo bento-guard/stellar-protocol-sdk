@@ -33,14 +33,9 @@ export class BlendServiceClient {
     this.tokenStore.save(credentials);
   }
 
-  setAccessToken(accessToken: string): void {
+  setApiKey(apiKey: string): void {
     const current = this.credentials;
-    this.tokenStore.save({ ...current, accessToken });
-  }
-
-  setApiKey(agentApiKey: string): void {
-    const current = this.credentials;
-    this.tokenStore.save({ ...current, agentApiKey });
+    this.tokenStore.save({ ...current, apiKey });
   }
 
   clearCredentials(): void {
@@ -50,13 +45,12 @@ export class BlendServiceClient {
   private setupInterceptors(): void {
     this.http.interceptors.request.use((config) => {
       const credentials = this.credentials;
-      if (credentials.accessToken) {
+      if (credentials.apiKey) {
         config.headers = config.headers ?? {};
-        config.headers.Authorization = `Bearer ${credentials.accessToken}`;
-      }
-      if (credentials.agentApiKey) {
+        config.headers['x-bento-api-key'] = credentials.apiKey;
+      } else if (process.env.BENTO_AGENT_API_KEY) {
         config.headers = config.headers ?? {};
-        config.headers['x-bento-api-key'] = credentials.agentApiKey;
+        config.headers['x-bento-api-key'] = process.env.BENTO_AGENT_API_KEY;
       }
       return config;
     });

@@ -13,8 +13,15 @@ const AUTH_BASE = buildEndpoint(Version.Version2, Module.AUTH);
 export class AgentIdentityApi {
   constructor(private readonly client: BlendServiceClient) { }
 
-  registerAgent(payload: RegisterAgentRequest): Promise<RegisterAgentResponse> {
-    return postJson<RegisterAgentResponse, RegisterAgentRequest>(this.client, `${AUTH_BASE}/register`, payload, 'Failed to register agent');
+  async registerAgent(payload: RegisterAgentRequest): Promise<RegisterAgentResponse> {
+    const response = await postJson<RegisterAgentResponse, RegisterAgentRequest>(
+      this.client,
+      `${AUTH_BASE}/register`,
+      payload,
+      'Failed to register agent'
+    );
+    this.client.setCredentials({ agentId: response.agentId, apiKey: response.apiKey });
+    return response;
   }
 
   getClaimStatus(): Promise<ClaimStatusResponse> {

@@ -14,7 +14,7 @@ export async function runUnitTests(): Promise<void> {
       run: () => {
         expectEqual(
           buildEndpoint(Version.Version2, Module.EMBEDDED_WALLET, 'position'),
-          '/v2/embedded-wallet/position',
+          '/api/v2/embedded-wallet/position',
         );
       },
     },
@@ -38,16 +38,14 @@ export async function runUnitTests(): Promise<void> {
         try {
           const store = new FileTokenStore('.bento-credentials');
           store.save({
-            agentApiKey: 'bento_sk_test',
-            accessToken: 'access-token',
-            refreshToken: 'refresh-token',
+            agentId: 'agent_123',
+            apiKey: 'bento_sk_test',
           });
 
           const loaded = store.load();
           expectEqual(loaded, {
-            agentApiKey: 'bento_sk_test',
-            accessToken: 'access-token',
-            refreshToken: 'refresh-token',
+            agentId: 'agent_123',
+            apiKey: 'bento_sk_test',
           });
 
           store.clear();

@@ -4,9 +4,8 @@ import { CREDENTIALS_FILE } from '../utils';
 import { BentoError } from '../utils';
 
 export interface BentoCredentials {
-  agentApiKey?: string;
-  accessToken?: string;
-  refreshToken?: string;
+  agentId?: string;
+  apiKey?: string;
 }
 
 export interface TokenStore {
