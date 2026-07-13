@@ -1,6 +1,6 @@
 {
   "name": "@bentoguard/protocol-sdk",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Bento Stellar SDK for AI Agents",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,7 +10,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "ts-node test/index.ts"
+    "test": "ts-node test/index.ts",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "changeset version && npm publish"
   },
   "keywords": [
     "bento",
@@ -24,6 +27,7 @@
   "author": "Bento Team",
   "license": "MIT",
   "dependencies": {
+    "@changesets/cli": "^2.31.0",
     "axios": "^1.18.1",
     "dotenv": "^17.4.2"
   },

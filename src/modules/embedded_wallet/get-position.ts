@@ -5,7 +5,7 @@ import { getJson } from '../../utils/request';
 
 const EMBEDDED_WALLET_BASE = buildEndpoint(Version.Version2, Module.EMBEDDED_WALLET);
 
-export async function getPosition(
+export async function getWalletBalance(
   client: BentoStellarClient,
 ): Promise<EmbeddedWalletPosition> {
   return getJson<EmbeddedWalletPosition>(

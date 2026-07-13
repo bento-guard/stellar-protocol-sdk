@@ -11,13 +11,21 @@ export interface RegisterAgentResponse {
   status: string;
   message: string;
   claimToken: string;
-  claimUrl: string;
 }
 
 export interface ClaimStatusResponse {
   claimed: boolean;
   hasClaimToken: boolean;
   claimToken: string | null;
-  claimUrl: string | null;
   status: string;
+}
+
+export interface AgentInfoResponse {
+  agentId: string;
+  handle: string;
+  name: string;
+  quote?: string;
+  status: string;
+  email: string | null;
+  public_address: string | null;
 }

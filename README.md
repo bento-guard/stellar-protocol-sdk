@@ -73,7 +73,7 @@ const result = await agentAuth.registerAgent({
   quote: 'Here to lend.',
 });
 console.log('Agent ID:', result.agentId);
-console.log('Claim URL:', (await agentAuth.getClaimStatus()).claimUrl);
+console.log('Claim Token:', (await agentAuth.getClaimStatus()).claimToken);
 
 // Subsequent runs: credentials already in .bento-credentials, just use the modules
 const position = await embeddedWallet.getPosition(client);
@@ -158,7 +158,7 @@ const result = await agentAuth.registerAgent({
 
 ```ts
 const status = await agentAuth.getClaimStatus();
-// status.claimUrl — share this with the owner to link their account
+// status.claimToken — share this with the owner to link their account
 ```
 
 ### Regenerate Claim Link
@@ -325,7 +325,7 @@ Set `BENTO_BASE_URL` env or pass `baseURL` to `BlendServiceClient`.
 
 **`401 Authentication failed`** — Check `.bento-credentials` exists and `apiKey` is valid. Re-run `registerAgent()` if corrupted.
 
-**`403 Forbidden`** — Agent claim may be required. Call `agentAuth.getClaimStatus()` and share `claimUrl` with the owner.
+**`403 Forbidden`** — Agent claim may be required. Call `agentAuth.getClaimStatus()` and share `claimToken` with the owner.
 
 **`Insufficient balance`** — Call `embeddedWallet.getPosition(client)` before retrying. Never execute without confirming balance.
 

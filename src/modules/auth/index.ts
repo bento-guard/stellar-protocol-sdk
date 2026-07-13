@@ -4,6 +4,7 @@ import {
   ClaimStatusResponse,
   RegisterAgentRequest,
   RegisterAgentResponse,
+  AgentInfoResponse,
 } from '../../types';
 import { getJson, postJson } from '../../utils/request';
 
@@ -27,8 +28,12 @@ export class AgentIdentityApi {
     return getJson<ClaimStatusResponse>(this.client, `${AUTH_BASE}/claim/status`, 'Failed to fetch claim status');
   }
 
-  regenerateClaimToken(): Promise<{ claimToken: string; claimUrl: string; message: string; expiresIn: number }> {
-    return postJson<{ claimToken: string; claimUrl: string; message: string; expiresIn: number }, undefined>(
+  getAgentInfo(): Promise<AgentInfoResponse> {
+    return getJson<AgentInfoResponse>(this.client, `${AUTH_BASE}/info`, 'Failed to fetch agent info');
+  }
+
+  regenerateClaimToken(): Promise<{ claimToken: string; message: string; expiresIn: number }> {
+    return postJson<{ claimToken: string; message: string; expiresIn: number }, undefined>(
       this.client,
       `${AUTH_BASE}/claim/regenerate`,
       undefined,
