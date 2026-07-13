@@ -21,7 +21,3 @@ export interface ClaimStatusResponse {
   claimUrl: string | null;
   status: string;
 }
-
-export interface ClaimAgentRequest {
-  claimToken: string;
-}

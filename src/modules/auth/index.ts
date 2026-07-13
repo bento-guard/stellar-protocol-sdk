@@ -1,7 +1,6 @@
 import { BlendServiceClient } from '../../core/bento-client';
 import { Module, Version, buildEndpoint } from '../../constants';
 import {
-  ClaimAgentRequest,
   ClaimStatusResponse,
   RegisterAgentRequest,
   RegisterAgentResponse,
