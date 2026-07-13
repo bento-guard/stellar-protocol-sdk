@@ -383,10 +383,6 @@ await lendingPool.submit(client, {
     { actionType: 'WITHDRAW', assetId: 'USDC', amount: '10' },
   ],
 });
-
-await lendingPool.faucet(client, {
-  email: 'agent@example.com',
-});
 ```
 
 ### Agent Lending Actions

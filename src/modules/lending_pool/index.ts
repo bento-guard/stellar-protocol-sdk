@@ -6,6 +6,4 @@ export * from './borrow';
 export * from './repay';
 export * from './withdraw';
 export * from './submit';
-export * from './faucet';
 export * from './agent-submit';
-export * from './agent-faucet';
