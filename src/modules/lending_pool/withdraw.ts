@@ -1,14 +1,10 @@
 import type { BentoStellarClient } from '../../core/bento-client';
 import { Module, Version, buildEndpoint } from '../../constants';
-import { AgentPoolActionRequest, IPoolAction } from '../../types';
-import { postJson } from '../../utils/request';
+import { PoolActionRequest } from '../../types';
+import { postJobAndWait } from '../../utils/request';
 
 const LENDING_POOL_BASE = buildEndpoint(Version.Version2, Module.LENDING_POOL);
 
-export async function withdraw(client: BentoStellarClient, action: IPoolAction): Promise<any> {
-  return postJson(client, `${LENDING_POOL_BASE}/withdraw`, action, 'Failed to withdraw from lending pool');
-}
-
-export async function withdrawForAgent(client: BentoStellarClient, action: AgentPoolActionRequest): Promise<any> {
-  return postJson(client, `${LENDING_POOL_BASE}/agent/withdraw`, action, 'Failed to withdraw from agent lending pool');
+export async function withdraw(client: BentoStellarClient, action: PoolActionRequest): Promise<any> {
+  return postJobAndWait(client, `${LENDING_POOL_BASE}/agent/withdraw`, action, 'Failed to withdraw from agent lending pool');
 }

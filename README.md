@@ -41,7 +41,7 @@ It is primarily useful for AI agents, backend services, and automation workers t
 - Agent identity and claim workflows
 - Wallet position and transaction flows
 - Lending pool read and execution actions
-- Agent-scoped variants for backend-resolved ownership
+- Backend-resolved wallet ownership via Agent API Keys
 - Transaction payload creation and approval flows
 - Typed request/response contracts
 - Centralized endpoint builder
@@ -78,7 +78,6 @@ async function main() {
   });
 
   client.setApiKey(process.env.BENTO_AGENT_API_KEY ?? '');
-  client.setAccessToken(process.env.BENTO_ACCESS_TOKEN ?? '');
 
   const agentApi = new auth.AgentIdentityApi(client);
   const claimStatus = await agentApi.getClaimStatus();
@@ -177,7 +176,6 @@ const claimStatus = await agentApi.getClaimStatus();
 import { embeddedWallet } from '@bentoguard/protocol-sdk';
 
 const result = await embeddedWallet.createTransaction(client, {
-  wallet_locator: 'email:agent@example.com',
   params: {
     to: 'GABC...',
     amount: '10',
@@ -185,39 +183,22 @@ const result = await embeddedWallet.createTransaction(client, {
 });
 ```
 
-### Get Balance
-
 ```ts
 const position = await embeddedWallet.getPosition(client);
 console.log(position);
 ```
 
-### Agent Wallet Balance
-
-```ts
-const agentPosition = await embeddedWallet.getAgentPosition(client);
-console.log(agentPosition);
-```
-
 ### Send Transaction
 
 ```ts
-await embeddedWallet.transfer(client, {
-  wallet_locator: 'email:agent@example.com',
+await embeddedWallet.transferAsset(client, {
   toAddress: 'GABC...',
   tokenId: 'USDC',
   amount: '25',
 });
 
 await embeddedWallet.approveTransaction(client, {
-  wallet_locator: 'email:agent@example.com',
   txId: 'tx_123',
-});
-
-await embeddedWallet.transferAgentAsset(client, {
-  toAddress: 'GABC...',
-  tokenId: 'USDC',
-  amount: '25',
 });
 ```
 
@@ -251,7 +232,6 @@ import { utils } from '@bentoguard/protocol-sdk';
 
 try {
   await lendingPool.borrow(client, {
-    email: 'agent@example.com',
     assetId: 'USDC',
     amount: '50',
   });

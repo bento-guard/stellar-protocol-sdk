@@ -11,7 +11,7 @@ import { getJson, postJson } from '../../utils/request';
 const AUTH_BASE = buildEndpoint(Version.Version2, Module.AUTH);
 
 export class AgentIdentityApi {
-  constructor(private readonly client: BlendServiceClient) {}
+  constructor(private readonly client: BlendServiceClient) { }
 
   registerAgent(payload: RegisterAgentRequest): Promise<RegisterAgentResponse> {
     return postJson<RegisterAgentResponse, RegisterAgentRequest>(this.client, `${AUTH_BASE}/register`, payload, 'Failed to register agent');
@@ -28,19 +28,6 @@ export class AgentIdentityApi {
       undefined,
       'Failed to regenerate claim token',
     );
-  }
-
-  claimAgent(payload: ClaimAgentRequest): Promise<{ success: boolean; message: string; agentId: string }> {
-    return postJson<{ success: boolean; message: string; agentId: string }, ClaimAgentRequest>(
-      this.client,
-      `${AUTH_BASE}/claim/verify`,
-      payload,
-      'Failed to claim agent',
-    );
-  }
-
-  getMyAgents(): Promise<{ items: unknown[]; total: number }> {
-    return getJson<{ items: unknown[]; total: number }>(this.client, `${AUTH_BASE}/me`, 'Failed to fetch claimed agents');
   }
 }
 

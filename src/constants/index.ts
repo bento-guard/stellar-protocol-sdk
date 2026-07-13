@@ -1,5 +1,7 @@
 export const CREDENTIALS_FILE = '.bento-credentials';
 export const DEFAULT_TIMEOUT_MS = 30_000;
+export const DEFAULT_POLL_INTERVAL_MS = 2000;
+export const DEFAULT_MAX_POLL_ATTEMPTS = 60;
 
 export enum BentoEnviroment {
   PROD = 'production',
@@ -22,6 +24,7 @@ export enum Module {
     LENDING_POOL = 'lending-pool',
     AUTH = 'agents/auth',
     EMBEDDED_WALLET = 'embedded-wallet',
+    JOBS = 'jobs',
 }
 
 export const NETWORK_CONFIG: Record<BentoEnviroment, { endpoint: string; defaultTimeout: number }> = {
@@ -44,5 +47,5 @@ export const DEFAULT_BASE_URL =
 
 export const buildEndpoint = (version: Version, module: Module, path = ''): string => {
   const suffix = path ? `/${path.replace(/^\/+/, '')}` : '';
-  return `/${version}/${module}${suffix}`;
+  return `/api/${version}/${module}${suffix}`;
 };
