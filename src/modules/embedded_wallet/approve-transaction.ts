@@ -1,9 +1,12 @@
-import type { RequestClient } from '../../utils/request';
-import { Module, Version, buildEndpoint } from '../../constants';
-import { ApproveTransactionRequest } from '../../types';
-import { postJson } from '../../utils/request';
+import type { RequestClient } from "../../utils/request";
+import { Module, Version, buildEndpoint } from "../../constants";
+import { ApproveTransactionRequest } from "../../types";
+import { postJson } from "../../utils/request";
 
-const EMBEDDED_WALLET_BASE = buildEndpoint(Version.Version2, Module.EMBEDDED_WALLET);
+const EMBEDDED_WALLET_BASE = buildEndpoint(
+  Version.Version2,
+  Module.EMBEDDED_WALLET,
+);
 
 export async function approveTransaction(
   client: RequestClient,
@@ -13,6 +16,6 @@ export async function approveTransaction(
     client,
     `${EMBEDDED_WALLET_BASE}/agent/transaction/approve`,
     request,
-    'Failed to approve agent transaction',
+    "Failed to approve agent transaction",
   );
 }

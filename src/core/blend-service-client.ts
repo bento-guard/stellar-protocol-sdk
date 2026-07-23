@@ -1,6 +1,11 @@
-import axios, { AxiosError, AxiosInstance } from 'axios';
-import { BentoAPIError, BentoAuthError, DEFAULT_BASE_URL, DEFAULT_TIMEOUT_MS } from '../utils';
-import { BentoCredentials, FileTokenStore, TokenStore } from './auth-store';
+import axios, { AxiosError, AxiosInstance } from "axios";
+import {
+  BentoAPIError,
+  BentoAuthError,
+  DEFAULT_BASE_URL,
+  DEFAULT_TIMEOUT_MS,
+} from "../utils";
+import { BentoCredentials, FileTokenStore, TokenStore } from "./auth-store";
 
 export interface BlendServiceClientOptions {
   baseURL?: string;
@@ -15,10 +20,11 @@ export class BlendServiceClient {
   constructor(options: BlendServiceClientOptions = {}) {
     this.tokenStore = options.tokenStore ?? new FileTokenStore();
     this.http = axios.create({
-      baseURL: options.baseURL ?? process.env.BENTO_BASE_URL ?? DEFAULT_BASE_URL,
+      baseURL:
+        options.baseURL ?? process.env.BENTO_BASE_URL ?? DEFAULT_BASE_URL,
       timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -47,10 +53,10 @@ export class BlendServiceClient {
       const credentials = this.credentials;
       if (credentials.apiKey) {
         config.headers = config.headers ?? {};
-        config.headers['x-bento-api-key'] = credentials.apiKey;
+        config.headers["x-bento-api-key"] = credentials.apiKey;
       } else if (process.env.BENTO_AGENT_API_KEY) {
         config.headers = config.headers ?? {};
-        config.headers['x-bento-api-key'] = process.env.BENTO_AGENT_API_KEY;
+        config.headers["x-bento-api-key"] = process.env.BENTO_AGENT_API_KEY;
       }
       return config;
     });
@@ -61,20 +67,32 @@ export class BlendServiceClient {
         const statusCode = error.response?.status;
         const payload = error.response?.data;
         if (statusCode === 401) {
-          return Promise.reject(new BentoAuthError('Authentication failed. Please refresh or set credentials again.'));
+          return Promise.reject(
+            new BentoAuthError(
+              "Authentication failed. Please refresh or set credentials again.",
+            ),
+          );
         }
         if (statusCode) {
-          return Promise.reject(new BentoAPIError(this.extractMessage(payload) ?? error.message, statusCode, payload));
+          return Promise.reject(
+            new BentoAPIError(
+              this.extractMessage(payload) ?? error.message,
+              statusCode,
+              payload,
+            ),
+          );
         }
-        return Promise.reject(new BentoAPIError(error.message, undefined, payload));
+        return Promise.reject(
+          new BentoAPIError(error.message, undefined, payload),
+        );
       },
     );
   }
 
   private extractMessage(payload: unknown): string | undefined {
-    if (typeof payload === 'object' && payload && 'message' in payload) {
+    if (typeof payload === "object" && payload && "message" in payload) {
       const value = (payload as { message?: unknown }).message;
-      return Array.isArray(value) ? value.join(', ') : String(value);
+      return Array.isArray(value) ? value.join(", ") : String(value);
     }
     return undefined;
   }

@@ -1,9 +1,12 @@
-import type { BentoStellarClient } from '../../core/bento-client';
-import { Module, Version, buildEndpoint } from '../../constants';
-import { EmbeddedWalletPosition } from '../../types';
-import { getJson } from '../../utils/request';
+import type { BentoStellarClient } from "../../core/bento-client";
+import { Module, Version, buildEndpoint } from "../../constants";
+import { EmbeddedWalletPosition } from "../../types";
+import { getJson } from "../../utils/request";
 
-const EMBEDDED_WALLET_BASE = buildEndpoint(Version.Version2, Module.EMBEDDED_WALLET);
+const EMBEDDED_WALLET_BASE = buildEndpoint(
+  Version.Version2,
+  Module.EMBEDDED_WALLET,
+);
 
 export async function getWalletBalance(
   client: BentoStellarClient,
@@ -11,6 +14,6 @@ export async function getWalletBalance(
   return getJson<EmbeddedWalletPosition>(
     client,
     `${EMBEDDED_WALLET_BASE}/agent/position`,
-    'Failed to fetch agent wallet position',
+    "Failed to fetch agent wallet position",
   );
 }

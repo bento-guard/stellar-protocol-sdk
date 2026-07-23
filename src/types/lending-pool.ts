@@ -1,4 +1,5 @@
-export type LendingActionType = 'DEPOSIT' | 'BORROW' | 'REPAY' | 'WITHDRAW' | 'SUBMIT' | '';
+export type LendingActionType =
+  "DEPOSIT" | "BORROW" | "REPAY" | "WITHDRAW" | "SUBMIT" | "";
 
 export interface ResolvedTargets {
   assetPubkeys?: string[];
@@ -15,7 +16,7 @@ export interface PoolActionRequest {
 
 export interface SubmitActionRequest {
   requests: Array<{
-    actionType: Exclude<LendingActionType, 'SUBMIT' | ''>;
+    actionType: Exclude<LendingActionType, "SUBMIT" | "">;
     assetPubkey: string;
     amount: string;
   }>;

@@ -1,7 +1,7 @@
-import type { AxiosInstance } from 'axios';
-import { BentoAPIError, isBentoError } from '../errors';
+import type { AxiosInstance } from "axios";
+import { BentoAPIError, isBentoError } from "../errors";
 
-type HttpClient = Pick<AxiosInstance, 'get' | 'post'>;
+type HttpClient = Pick<AxiosInstance, "get" | "post">;
 
 export interface RequestClient {
   http: HttpClient;
@@ -13,7 +13,11 @@ function wrapError(error: unknown, fallbackMessage: string): never {
   throw new BentoAPIError(message || fallbackMessage, undefined, error);
 }
 
-export async function getJson<T>(client: RequestClient, url: string, fallbackMessage: string): Promise<T> {
+export async function getJson<T>(
+  client: RequestClient,
+  url: string,
+  fallbackMessage: string,
+): Promise<T> {
   try {
     const response = await client.http.get<T>(url);
     return response.data;
@@ -35,5 +39,3 @@ export async function postJson<TResponse, TBody = unknown>(
     wrapError(error, fallbackMessage);
   }
 }
-
-

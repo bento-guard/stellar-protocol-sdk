@@ -1,16 +1,18 @@
-export * from './constants';
+export * from "./constants";
 
 export class BentoError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'BentoError';
+    this.name = "BentoError";
   }
 }
 
 export class BentoAuthError extends BentoError {
-  constructor(message: string = 'Authentication failed. Please check your credentials.') {
+  constructor(
+    message: string = "Authentication failed. Please check your credentials.",
+  ) {
     super(message);
-    this.name = 'BentoAuthError';
+    this.name = "BentoAuthError";
   }
 }
 
@@ -20,7 +22,7 @@ export class BentoAPIError extends BentoError {
 
   constructor(message: string, statusCode?: number, response?: unknown) {
     super(message);
-    this.name = 'BentoAPIError';
+    this.name = "BentoAPIError";
     this.statusCode = statusCode;
     this.response = response;
   }
@@ -29,7 +31,7 @@ export class BentoAPIError extends BentoError {
 export class BentoConfigError extends BentoError {
   constructor(message: string) {
     super(message);
-    this.name = 'BentoConfigError';
+    this.name = "BentoConfigError";
   }
 }
 

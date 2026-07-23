@@ -6,7 +6,7 @@ export interface ApproveTransactionRequest {
   txId: string;
 }
 
-import { ResolvedTargets } from './lending-pool';
+import { ResolvedTargets } from "./lending-pool";
 
 export interface TransferAssetRequest {
   targetPubkey: string;

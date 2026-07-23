@@ -1,7 +1,7 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { CREDENTIALS_FILE } from '../utils';
-import { BentoError } from '../utils';
+import * as fs from "fs";
+import * as path from "path";
+import { CREDENTIALS_FILE } from "../utils";
+import { BentoError } from "../utils";
 
 export interface BentoCredentials {
   agentId?: string;
@@ -28,7 +28,7 @@ export class FileTokenStore implements TokenStore {
     }
 
     try {
-      return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as BentoCredentials;
+      return JSON.parse(fs.readFileSync(filePath, "utf-8")) as BentoCredentials;
     } catch (error: any) {
       throw new BentoError(`Failed to read credentials: ${error.message}`);
     }
@@ -37,7 +37,10 @@ export class FileTokenStore implements TokenStore {
   save(credentials: BentoCredentials): void {
     const filePath = resolvePath(this.fileName);
     try {
-      fs.writeFileSync(filePath, JSON.stringify(credentials, null, 2), { encoding: 'utf-8', mode: 0o600 });
+      fs.writeFileSync(filePath, JSON.stringify(credentials, null, 2), {
+        encoding: "utf-8",
+        mode: 0o600,
+      });
       try {
         fs.chmodSync(filePath, 0o600);
       } catch {

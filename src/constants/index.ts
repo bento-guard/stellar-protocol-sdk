@@ -1,32 +1,35 @@
-export const CREDENTIALS_FILE = '.bento-credentials';
+export const CREDENTIALS_FILE = ".bento-credentials";
 export const DEFAULT_TIMEOUT_MS = 30_000;
 
 export enum BentoEnviroment {
-  PROD = 'production',
-  DEV = 'development',
-  LOCAL = 'local',
+  PROD = "production",
+  DEV = "development",
+  LOCAL = "local",
 }
 
 export enum Relayer {
-  PRODUCTION = '',
-  DEVELOPMENT = 'https://api.dev.bentoguard.xyz',
-  LOCAL = 'http://localhost:4001',
+  PRODUCTION = "",
+  DEVELOPMENT = "https://api.dev.bentoguard.xyz",
+  LOCAL = "http://localhost:4001",
 }
 
 export enum Version {
-  Version1 = 'v1',
-  Version2 = 'v2',
+  Version1 = "v1",
+  Version2 = "v2",
 }
 
 export enum Module {
-  LENDING_POOL = 'lending-pool',
-  AUTH = 'agents/auth',
-  EMBEDDED_WALLET = 'embedded-wallet',
-  JOBS = 'jobs',
-  RISK_ENGINE = 'risk-engine',
+  LENDING_POOL = "lending-pool",
+  AUTH = "agents/auth",
+  EMBEDDED_WALLET = "embedded-wallet",
+  JOBS = "jobs",
+  RISK_ENGINE = "risk-engine",
 }
 
-export const NETWORK_CONFIG: Record<BentoEnviroment, { endpoint: string; defaultTimeout: number }> = {
+export const NETWORK_CONFIG: Record<
+  BentoEnviroment,
+  { endpoint: string; defaultTimeout: number }
+> = {
   [BentoEnviroment.PROD]: {
     endpoint: Relayer.PRODUCTION,
     defaultTimeout: DEFAULT_TIMEOUT_MS,
@@ -41,10 +44,13 @@ export const NETWORK_CONFIG: Record<BentoEnviroment, { endpoint: string; default
   },
 };
 
-export const DEFAULT_BASE_URL =
-  NETWORK_CONFIG[BentoEnviroment.DEV].endpoint;
+export const DEFAULT_BASE_URL = NETWORK_CONFIG[BentoEnviroment.DEV].endpoint;
 
-export const buildEndpoint = (version: Version, module: Module, path = ''): string => {
-  const suffix = path ? `/${path.replace(/^\/+/, '')}` : '';
+export const buildEndpoint = (
+  version: Version,
+  module: Module,
+  path = "",
+): string => {
+  const suffix = path ? `/${path.replace(/^\/+/, "")}` : "";
   return `/api/${version}/${module}${suffix}`;
 };
