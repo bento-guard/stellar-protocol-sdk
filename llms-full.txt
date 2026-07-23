@@ -207,6 +207,174 @@ Your agent should be programmed to understand these two states:
 
 Once a transaction is `ESCALATED`, a Human Admin must log into the Bento UI to review it. They can either Approve or Reject the draft. If approved, the backend signs and broadcasts the transaction to the Stellar network asynchronously.
 
+# Source: docs/reference/auth.md
+
+# Auth API
+
+The Auth API manages Agent Registration and Identity verification.
+
+## createAgentIdentityApi
+
+```typescript
+import { auth, BlendServiceClient } from '@bentoguard/protocol-sdk';
+
+const client = new BlendServiceClient();
+const agentAuth = auth.createAgentIdentityApi(client);
+```
+
+### `registerAgent(request)`
+
+Registers a new AI Agent with the Bento Backend. If successful, the API returns credentials which are automatically saved into the active Token Store.
+
+**Parameters:**
+- `request.name` (string): The display name of your agent.
+- `request.handle` (string): A unique handle for your agent.
+- `request.quote` (string, optional): A descriptive quote or bio.
+
+**Returns:**
+- `agentId` (string): The newly generated UUID of the agent.
+
+### `getClaimStatus()`
+
+Checks the current identity status of the agent.
+
+**Returns:**
+- `claimToken` (string): The agent's identity token.
+- `agentId` (string): The registered agent ID.
+
+# Source: docs/reference/bento-client.md
+
+# BlendServiceClient
+
+The core HTTP client that connects your agent to the Bento backend. It is isomorphic and supports automatic token persistence out-of-the-box.
+
+## Constructor
+
+```typescript
+import { BlendServiceClient } from '@bentoguard/protocol-sdk';
+
+const client = new BlendServiceClient({
+  baseURL: 'http://localhost:3000', // Optional
+  timeout: 10000 // Optional: Request timeout in ms
+});
+```
+
+## Token Stores
+
+The SDK uses specialized Token Stores to persist the Agent's identity (`agentId` and `apiKey`). The `BlendServiceClient` automatically selects the appropriate store based on the environment:
+
+1. **BrowserTokenStore**: Used in browser environments (`window` is defined). Saves credentials in `localStorage`.
+2. **FileTokenStore**: Used in Node.js environments. Saves credentials in `.bento-credentials` at the project root.
+3. **MemoryTokenStore**: Used as a fallback if the environment does not support file systems or local storage. Credentials are wiped when the process exits.
+
+# Source: docs/reference/embedded-wallet.md
+
+# Embedded Wallet API
+
+```typescript
+import { embeddedWallet } from '@bentoguard/protocol-sdk';
+```
+
+### `getWalletBalance(client)`
+
+Queries the current token balance of the Agent's wallet.
+
+**Parameters:**
+- `client` (BlendServiceClient): The configured API client.
+
+**Returns:**
+- An array of asset objects containing `assetId` and `amount`.
+
+### `transferAsset(client, request)`
+
+Initiates a secure transfer of assets to another Stellar address. This is a **Write Operation** and is guarded by Bento Guard.
+
+**Parameters:**
+- `client` (BlendServiceClient): The configured API client.
+- `request.assetId` (string): The asset ticker (e.g. `XLM`, `USDC`).
+- `request.amount` (string): The amount to transfer.
+- `request.destinationAddress` (string): The Stellar public key of the recipient.
+
+**Returns `SecureActionResponse`:**
+- `{ status: 'ALLOWED', transactionHash: string }`
+- `{ status: 'ESCALATED', draftId: string }`
+
+# Source: docs/reference/errors.md
+
+# Error Handling
+
+The SDK exposes custom error classes to help you distinguish between different failure modes.
+
+```typescript
+import { BentoError, BentoAPIError, BentoAuthError } from '@bentoguard/protocol-sdk';
+```
+
+### `BentoError`
+The base class for all SDK-specific errors.
+
+### `BentoAPIError`
+Thrown when the Bento backend returns an HTTP error.
+
+**Properties:**
+- `status`: The HTTP status code (e.g. 400, 500).
+- `data`: The raw JSON payload returned by the server, useful for parsing validation errors.
+
+### `BentoAuthError`
+Thrown when there is a problem with the Agent's identity or credentials. Examples include:
+- Missing `.bento-credentials` file.
+- Corrupted credentials structure.
+- The Token Store failing to save or retrieve the keys.
+
+# Source: docs/reference/lending-pool.md
+
+# Lending Pool API
+
+```typescript
+import { lendingPool } from '@bentoguard/protocol-sdk';
+```
+
+## Read Operations (Data Fetching)
+
+### `getLendingPoolInfo(client)`
+Fetches global parameters of the lending pool.
+- **Returns:** Global reserve metrics.
+
+### `getReserves(client, request)`
+Fetches the current interest rates, total supplied, and total borrowed for a specific asset.
+- **Parameters:** `request.assetId` (string).
+
+### `getPosition(client)`
+Fetches the Agent's current DeFi position (collateral supplied and assets borrowed).
+- **Returns:** `{ supplies: [...], borrows: [...] }`
+
+## Write Operations (Secured by Bento Guard)
+
+All these functions return the `SecureActionResponse` indicating whether the action was `ALLOWED` or `ESCALATED`.
+
+### `deposit(client, request)`
+Supplies an asset to the lending pool to earn yield and use as collateral.
+- `request.assetId`: Asset ticker.
+- `request.amount`: Amount to deposit.
+
+### `borrow(client, request)`
+Borrows an asset against the agent's deposited collateral.
+- `request.assetId`: Asset ticker to borrow.
+- `request.amount`: Amount to borrow.
+
+### `repay(client, request)`
+Repays a borrowed asset.
+- `request.assetId`: Asset ticker to repay.
+- `request.amount`: Amount to repay.
+
+### `withdraw(client, request)`
+Withdraws supplied collateral from the pool.
+- `request.assetId`: Asset ticker to withdraw.
+- `request.amount`: Amount to withdraw.
+
+### `submitBatch(client, request)`
+Executes multiple lending actions atomically.
+- `request.requests`: An array of objects, where each object has a `requestType` (`'deposit' | 'borrow' | 'repay' | 'withdraw'`), `assetId`, and `amount`.
+
 # Source: docs/agents.md
 
 # AI Agents

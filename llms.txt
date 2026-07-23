@@ -8,5 +8,12 @@
 - [Bento Guard](/docs/guides/04-bento-guard.md): Understanding the Secure Execution Pipeline that protects your Agent's assets.
 
 ## Reference
+- [Auth API](/docs/reference/auth.md): Reference documentation for the Agent Authentication module.
+- [Bento Client API](/docs/reference/bento-client.md): Reference documentation for the BlendServiceClient and Token Stores.
+- [Embedded Wallet API](/docs/reference/embedded-wallet.md): Reference documentation for the Embedded Wallet module.
+- [Error Handling](/docs/reference/errors.md): Reference for errors thrown by the Bento Stellar SDK.
+- [Lending Pool API](/docs/reference/lending-pool.md): Reference documentation for the DeFi Lending Pool module.
+
+## Other
 - [AI Agents](/docs/agents.md): Documentation formats and best practices for AI Agents consuming the Bento Stellar SDK.
 - [Full bundle](/llms-full.txt): All guide and reference content, in one file.

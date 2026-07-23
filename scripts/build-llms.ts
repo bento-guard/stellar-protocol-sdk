@@ -51,6 +51,14 @@ function main() {
   const guideFiles = readdirSync(join(DOCS_DIR, 'guides')).filter(f => f.endsWith('.md')).sort();
   const guides = guideFiles.map(f => readDoc(`guides/${f}`));
 
+  let referenceFiles: string[] = [];
+  try {
+    referenceFiles = readdirSync(join(DOCS_DIR, 'reference')).filter(f => f.endsWith('.md')).sort();
+  } catch (e) {
+    // Ignore if reference dir doesn't exist
+  }
+  const references = referenceFiles.map(f => readDoc(`reference/${f}`));
+
   // Generate llms.txt
   const llmsTxtLines = [
     '# Bento Stellar SDK',
@@ -60,6 +68,9 @@ function main() {
     ...guides.map(g => `- [${g.title}](${g.url}): ${g.description}`),
     '',
     '## Reference',
+    ...references.map(r => `- [${r.title}](${r.url}): ${r.description}`),
+    '',
+    '## Other',
     `- [${agentsPage.title}](${agentsPage.url}): ${agentsPage.description}`,
     '- [Full bundle](/llms-full.txt): All guide and reference content, in one file.'
   ];
@@ -78,6 +89,7 @@ function main() {
   const llmsFullTxtSections = [
     `# Source: ${indexPage.path}\n\n${indexPage.body}`,
     ...guides.map(g => `# Source: ${g.path}\n\n${g.body}`),
+    ...references.map(r => `# Source: ${r.path}\n\n${r.body}`),
     `# Source: ${agentsPage.path}\n\n${agentsPage.body}`,
     `# Source: CHANGELOG.md\n\n${changelog}`
   ];
