@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "ts-node test/index.ts",
+    "test": "jest",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "changeset version && npm publish"
@@ -32,9 +32,12 @@
     "dotenv": "^17.4.2"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^26.1.1",
     "eslint": "^10.6.0",
+    "jest": "^30.4.2",
     "prettier": "^3.9.4",
+    "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
   }

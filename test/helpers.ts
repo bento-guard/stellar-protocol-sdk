@@ -1,26 +1,3 @@
-import assert from 'node:assert/strict';
-
-export type TestFn = () => void | Promise<void>;
-
-export interface TestCase {
-  name: string;
-  run: TestFn;
-}
-
-export async function runSuite(title: string, cases: TestCase[]): Promise<void> {
-  console.log(`\n${title}`);
-
-  for (const testCase of cases) {
-    try {
-      await testCase.run();
-      console.log(`  ✓ ${testCase.name}`);
-    } catch (error) {
-      console.error(`  ✗ ${testCase.name}`);
-      throw error;
-    }
-  }
-}
-
 export function createMockHttp(defaultResponse: any = undefined) {
   return {
     getCalls: [] as Array<{ url: string }>,
@@ -38,12 +15,4 @@ export function createMockHttp(defaultResponse: any = undefined) {
       return Promise.resolve({ data: defaultResponse as T });
     },
   };
-}
-
-export function expectEqual(actual: unknown, expected: unknown, message?: string): void {
-  if (message) {
-    assert.deepEqual(actual, expected, message);
-    return;
-  }
-  assert.deepEqual(actual, expected);
 }
