@@ -1,5 +1,15 @@
 # @bentoguard/protocol-sdk
 
+## 0.3.0
+
+### Minor Changes
+
+- ### Features & Enhancements
+  - **Security Layer**: Added a comprehensive security layer for robust protection.
+  - **Core APIs**: Introduced `getAgentInfo` to seamlessly fetch agent metadata.
+  - **Wallet & Authentication**: Renamed `getPosition` to `getWalletBalance` for better API clarity and updated underlying authentication types.
+  - **Testing**: Updated testcase logic and improved overall reliability.
+
 ## 0.2.0
 
 ### Minor Changes
