@@ -1,0 +1,257 @@
+# Source: docs/index.md
+
+# Bento Stellar SDK
+
+Welcome to the Bento Stellar SDK documentation! This SDK is the primary client for AI Agents to interact with the Bento backend and the Stellar Network.
+
+## What is this SDK?
+
+Bento Stellar SDK provides an isomorphic (works in Node.js and Browser), typed, ergonomic interface for agents to execute secure actions (transfers, lending) via the Bento Guard risk engine.
+
+## Documentation Index
+
+- [AI Agents](./agents.md): How AI Agents can consume this documentation optimally.
+
+**Guides**
+- [Getting Started](./guides/01-getting-started.md): Installation and Agent Registration.
+- [Embedded Wallet](./guides/02-embedded-wallet.md): Querying balances and transferring assets.
+- [Lending Pool](./guides/03-lending-pool.md): Interacting with the lending markets.
+- [Bento Guard](./guides/04-bento-guard.md): Understanding the secure execution pipeline.
+
+# Source: docs/guides/01-getting-started.md
+
+# Getting Started
+
+The Bento Stellar SDK is an isomorphic TypeScript library designed to connect AI Agents to the Bento Backend and Stellar Network.
+
+## Installation
+
+```bash
+npm install @bentoguard/protocol-sdk
+```
+
+## Initialization
+
+The SDK uses `BlendServiceClient` as the primary HTTP client. It automatically handles token persistence based on your environment:
+- **Node.js**: Saves to `.bento-credentials` file.
+- **Browser**: Saves to `localStorage`.
+- **Memory**: Falls back to memory if neither is available.
+
+```typescript
+import { BlendServiceClient, auth } from '@bentoguard/protocol-sdk';
+
+const client = new BlendServiceClient();
+```
+
+## Agent Registration (Claiming)
+
+If this is your first time running the agent, you must register it. The API will return an `agentId` and an `apiKey`. The SDK saves these automatically.
+
+```typescript
+const agentAuth = auth.createAgentIdentityApi(client);
+
+const result = await agentAuth.registerAgent({
+  name: 'My Trading Bot',
+  handle: 'trading_bot_01',
+  quote: 'Ready to trade and lend!',
+});
+
+console.log('Registered Agent ID:', result.agentId);
+```
+
+## Verifying Claim Status
+
+To check if your agent's identity is active:
+```typescript
+const claimStatus = await agentAuth.getClaimStatus();
+console.log('Claim Token:', claimStatus.claimToken);
+```
+
+Once registered, subsequent script executions will auto-load the credentials from the storage without needing to register again.
+
+# Source: docs/guides/02-embedded-wallet.md
+
+# Embedded Wallet
+
+Every registered AI Agent receives an embedded Stellar wallet. This wallet is used to hold assets and execute transactions on the Stellar network.
+
+## Getting Wallet Balance
+
+To check the available assets in the agent's wallet:
+
+```typescript
+import { BlendServiceClient, embeddedWallet } from '@bentoguard/protocol-sdk';
+
+const client = new BlendServiceClient();
+
+// The balance query is a Read Operation (no Risk Engine check needed)
+const balance = await embeddedWallet.getWalletBalance(client);
+console.log('Available Balance:', balance);
+```
+
+## Transferring Assets
+
+Transferring assets from the agent's wallet to another Stellar address is a **Write Operation**. This means it is automatically evaluated by the Bento Guard Risk Engine.
+
+```typescript
+// Define transfer parameters
+const request = {
+  assetId: 'XLM',
+  amount: '10.5',
+  destinationAddress: 'G...RECEIVER_ADDRESS',
+};
+
+// This executes the 3-step secure pipeline
+const result = await embeddedWallet.transferAsset(client, request);
+
+if (result.status === 'ALLOWED') {
+    console.log('Transfer Approved & Broadcasted! TxHash:', result.transactionHash);
+} else if (result.status === 'ESCALATED') {
+    console.log('Transfer Held for Human Review. Draft ID:', result.draftId);
+}
+```
+
+Behind the scenes, `transferAsset` uses `executeSecureAgentAction` which drafts the transaction and awaits risk engine approval before broadcasting it.
+
+# Source: docs/guides/03-lending-pool.md
+
+# Lending Pool
+
+The `lendingPool` module allows AI agents to interact with DeFi markets directly on Stellar.
+
+## Reading Market Data
+
+These are Read Operations and return immediately:
+
+```typescript
+import { BlendServiceClient, lendingPool } from '@bentoguard/protocol-sdk';
+
+const client = new BlendServiceClient();
+
+// Get overall pool info
+const info = await lendingPool.getLendingPoolInfo(client);
+
+// Get specific asset reserves
+const reserves = await lendingPool.getReserves(client, { assetId: 'USDC' });
+
+// Get the agent's current position (supplied/borrowed)
+const position = await lendingPool.getPosition(client);
+```
+
+## Lending Actions (Write Operations)
+
+Interacting with the pool requires writing to the blockchain. All of the following methods are guarded by the Bento Guard Risk Engine:
+
+- `deposit`: Supply assets to earn interest.
+- `borrow`: Borrow assets against your collateral.
+- `repay`: Repay borrowed assets.
+- `withdraw`: Withdraw supplied collateral.
+- `submitBatch`: Execute multiple actions in a single atomic transaction.
+
+**Example: Depositing Assets**
+```typescript
+const result = await lendingPool.deposit(client, {
+  assetId: 'USDC',
+  amount: '500',
+});
+
+if (result.status === 'ALLOWED') {
+    console.log('Successfully deposited! TxHash:', result.transactionHash);
+}
+```
+
+**Example: Submitting a Batch**
+```typescript
+// Deposit XLM and borrow USDC in one transaction
+const result = await lendingPool.submitBatch(client, {
+  requests: [
+    { requestType: 'deposit', assetId: 'XLM', amount: '1000' },
+    { requestType: 'borrow', assetId: 'USDC', amount: '50' }
+  ]
+});
+```
+
+# Source: docs/guides/04-bento-guard.md
+
+# Bento Guard
+
+Bento Guard is the built-in risk engine for the Bento backend. Because AI Agents are autonomous, they carry a high risk of executing incorrect or malicious transactions if their prompts are manipulated (e.g., prompt injection) or if their logic fails.
+
+To protect against this, **all Write Operations in the SDK are automatically routed through a 3-step secure execution pipeline.**
+
+## The 3-Step Secure Pipeline
+
+When your agent calls a write method (like `transferAsset` or `deposit`), the SDK does *not* broadcast the transaction directly to the Stellar network. Instead:
+
+1. **Draft Creation:** The SDK contacts the Bento backend to draft a transaction. A `draftId` is returned.
+2. **Risk Evaluation:** The SDK submits the `draftId` to the Bento Guard API. The Risk Engine analyzes the transaction context (amount, destination, historical behavior, agent profile).
+3. **Decision & Action:**
+    - If the Risk Engine determines the transaction is safe, it returns `ALLOWED`. The SDK immediately instructs the backend to approve and broadcast the transaction.
+    - If the Risk Engine flags the transaction as risky, it returns `ESCALATED`. The SDK returns a "Held for Human Review" status.
+
+## Handling the Output
+
+Every Write Operation in the SDK returns a standardized response type indicating the outcome.
+
+```typescript
+type SecureActionResponse = 
+  | { status: 'ALLOWED'; transactionHash: string }
+  | { status: 'ESCALATED'; draftId: string };
+```
+
+Your agent should be programmed to understand these two states:
+- **ALLOWED**: The task succeeded. The agent can confidently tell the user that the transfer or deposit is complete.
+- **ESCALATED**: The task is paused. The agent should inform the user: *"I have drafted the transaction, but it requires your manual approval in the Bento Dashboard due to security limits."*
+
+## Dashboard Approval
+
+Once a transaction is `ESCALATED`, a Human Admin must log into the Bento UI to review it. They can either Approve or Reject the draft. If approved, the backend signs and broadcasts the transaction to the Stellar network asynchronously.
+
+# Source: docs/agents.md
+
+# AI Agents
+
+This SDK publishes its documentation in formats designed specifically for AI Agents (like Cursor, Claude, or autonomous agent loops).
+
+## llms.txt bundles
+
+We provide structured bundles of the entire documentation corpus, served at the root of our repository/site:
+
+- [`llms.txt`](../llms.txt) — The routing map. It indexes every guide and reference page. Pick the most relevant page from this list for your task.
+- [`llms-full.txt`](../llms-full.txt) — The full corpus concatenated as one prose stream. Ingest this when you want the whole API surface in one shot.
+
+These files are auto-generated on every major change using our internal `build-llms.ts` script.
+
+## Isomorphic Context
+
+When writing code for this SDK, please note that it is **Isomorphic**.
+- The `BlendServiceClient` uses environment-aware stores (`MemoryTokenStore`, `BrowserTokenStore`, `FileTokenStore`).
+- Always import from the top level `@bentoguard/protocol-sdk`.
+- Do not assume `fs` or `path` are available (they are safely guarded for browser use).
+
+# Source: CHANGELOG.md
+
+# @bentoguard/protocol-sdk
+
+## 0.3.0
+
+### Minor Changes
+
+- ### Features & Enhancements
+  - **Security Layer**: Added a comprehensive security layer for robust protection.
+  - **Core APIs**: Introduced `getAgentInfo` to seamlessly fetch agent metadata.
+  - **Wallet & Authentication**: Renamed `getPosition` to `getWalletBalance` for better API clarity and updated underlying authentication types.
+  - **Testing**: Updated testcase logic and improved overall reliability.
+
+## 0.2.0
+
+### Minor Changes
+
+- ### Features
+  - Integrated `@changesets/cli` to automate package versioning and changelog generation.
+  - Added `getAgentInfo` function to retrieve agent metadata and configuration details.
+
+  ### Breaking Changes
+  - Renamed `getPosition` function to `getWalletBalance` for better semantic clarity.
+  - Updated authentication types across the SDK to enforce stricter type safety; older custom type definitions may require updates.
+

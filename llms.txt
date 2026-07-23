@@ -1,0 +1,12 @@
+# Bento Stellar SDK
+> Overview and index of the Bento Stellar SDK documentation.
+
+## Guides
+- [Getting Started](/docs/guides/01-getting-started.md): How to install, configure, and register your AI Agent with the Bento Stellar SDK.
+- [Embedded Wallet](/docs/guides/02-embedded-wallet.md): Guide on using the embedded Stellar wallet associated with your agent.
+- [Lending Pool](/docs/guides/03-lending-pool.md): How to interact with the Stellar DeFi lending pool (Blend protocol).
+- [Bento Guard](/docs/guides/04-bento-guard.md): Understanding the Secure Execution Pipeline that protects your Agent's assets.
+
+## Reference
+- [AI Agents](/docs/agents.md): Documentation formats and best practices for AI Agents consuming the Bento Stellar SDK.
+- [Full bundle](/llms-full.txt): All guide and reference content, in one file.

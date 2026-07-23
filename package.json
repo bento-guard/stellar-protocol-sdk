@@ -11,6 +11,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "jest",
+    "docs:llms": "ts-node scripts/build-llms.ts",
     "fmt": "prettier --write \"src/**/*.ts\"",
     "prepare": "husky",
     "changeset": "changeset",

@@ -1,2 +1,3 @@
+npm run docs:llms
 npm run build
 npm run test
