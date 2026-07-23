@@ -11,6 +11,8 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "jest",
+    "fmt": "prettier --write \"src/**/*.ts\"",
+    "prepare": "husky",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "changeset version && npm publish"
@@ -35,10 +37,17 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^26.1.1",
     "eslint": "^10.6.0",
+    "husky": "^9.1.7",
     "jest": "^30.4.2",
+    "lint-staged": "^17.1.1",
     "prettier": "^3.9.4",
     "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "prettier --write"
+    ]
   }
 }
