@@ -1,10 +1,10 @@
 # Bento Stellar SDK
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue)](./package.json)
 [![License](https://img.shields.io/badge/license-MIT-green)](#license)
 [![npm](https://img.shields.io/badge/npm-@bentoguard%2Fprotocol--sdk-red)](https://www.npmjs.com/package/@bentoguard/protocol-sdk)
 
-A production-ready TypeScript SDK for AI agents to authenticate, manage wallets, and execute lending transactions on the Bento Stellar backend.
+A production-ready TypeScript SDK for AI agents to authenticate, manage wallets, and execute lending transactions on the Bento Stellar backend — with built-in Bento Guard risk engine integration.
 
 ## Table of Contents
 
@@ -15,6 +15,7 @@ A production-ready TypeScript SDK for AI agents to authenticate, manage wallets,
 - [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
 - [Core Concepts](#core-concepts)
+- [Security Gate (Bento Guard)](#security-gate-bento-guard)
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Error Handling](#error-handling)
@@ -29,21 +30,26 @@ A production-ready TypeScript SDK for AI agents to authenticate, manage wallets,
 
 Bento Stellar SDK is the agent-facing client for the Bento Stellar backend. It gives AI agents a typed, ergonomic way to interact with the backend without hardcoding routes or managing request concerns in every integration.
 
+All agent write operations (transfer, lending actions) automatically pass through a **3-step secure execution pipeline**:
+1. Create a transaction draft
+2. Run the Bento Guard Risk Engine
+3. Approve and broadcast (if ALLOWED), or hold for review (if ESCALATED)
+
 Credentials (`agentId` and `apiKey`) are persisted to a `.bento-credentials` file automatically on first registration. Subsequent runs load them transparently — no manual configuration needed.
 
 ## Features
 
 - Agent registration and claim status workflows
 - Automatic credential persistence via `.bento-credentials`
-- Embedded wallet position and transfer flows
+- Embedded wallet balance query and asset transfer
 - Transaction create and approve flows
 - Lending pool market discovery (info, reserves, position)
 - Lending actions: deposit, borrow, repay, withdraw, submit (batch)
+- **Bento Guard integration**: all agent write operations are gated by the risk engine automatically
 - Typed request/response contracts via TypeScript
-- Centralized versioned endpoint builder
+- Centralized versioned endpoint builder (`buildEndpoint`)
 - Normalized error types with HTTP status code and response payload
 - Clean module-based API surface
-- Test coverage split into unit, integration, and e2e suites
 
 ## Installation
 
@@ -76,24 +82,26 @@ console.log('Agent ID:', result.agentId);
 console.log('Claim Token:', (await agentAuth.getClaimStatus()).claimToken);
 
 // Subsequent runs: credentials already in .bento-credentials, just use the modules
-const position = await embeddedWallet.getPosition(client);
+const balance = await embeddedWallet.getWalletBalance(client);
 const reserves = await lendingPool.getReserves(client);
-console.log({ position, reserves });
+console.log({ balance, reserves });
 ```
 
 ## Project Structure
 
 ```text
 src/
-  constants/         # Endpoint builder, version/module enums, poll config
-  core/              # HTTP client (BlendServiceClient) and credential store (FileTokenStore)
+  constants/         # Endpoint builder, version/module enums (Version, Module)
+  core/              # HTTP client (BentoStellarClient / BlendServiceClient) and credential store
   errors/            # SDK error types: BentoError, BentoAPIError, BentoAuthError
   modules/
     auth/            # Agent registration and claim status
-    embedded_wallet/ # Wallet position, transfer, create/approve transaction
+    embedded_wallet/ # Wallet balance, transfer, create/approve transaction
     lending_pool/    # Market info, reserves, position, deposit/borrow/repay/withdraw/submit
   types/             # Shared TypeScript request/response interfaces
-  utils/             # Logger, error re-exports, constants re-exports
+  utils/
+    request.ts       # postJson, getJson — typed HTTP helpers
+    security.ts      # executeSecureAgentAction — 3-step Bento Guard pipeline
 ```
 
 ## Core Concepts
@@ -103,7 +111,34 @@ src/
 - **Agent** — an autonomous identity registered on the backend with its own wallet and lending position.
 - **Claim** — the process by which a human owner links their account to the agent. Required before certain protected operations.
 - **Pool** — the Blend Protocol lending market for discovery and transaction actions.
-- **Job** — background async task returned by write operations (deposit, transfer, etc.). The SDK polls until completion automatically.
+- **Secure Action** — agent write operations go through `executeSecureAgentAction`, which creates a draft, checks the risk engine, then broadcasts on ALLOW.
+
+## Security Gate (Bento Guard)
+
+All agent write operations (lending actions and transfers) automatically go through a 3-step pipeline when an `instruction` is provided:
+
+```text
+Step 1 → Create transaction draft            → { transaction_id }
+Step 2 → Risk Engine evaluates instruction   → verdict: ALLOW | ESCALATED | BLOCKED
+Step 3 → ALLOW:     approve & broadcast tx
+         ESCALATED: return { status, transaction_id, reason }
+         BLOCKED:   throw Error
+```
+
+Populate the `instruction` and `resolvedTargets` fields in your request to activate the security gate:
+
+```ts
+await lendingPool.deposit(client, {
+  assetPubkey: 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC',
+  amount: '100',
+  instruction: 'Deposit 100 XLM into the lending pool',
+  resolvedTargets: {
+    assetPubkeys: ['CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'],
+  },
+});
+```
+
+If `instruction` is omitted, the SDK returns the draft ID directly for manual approval.
 
 ## Configuration
 
@@ -111,9 +146,7 @@ src/
 
 ```ts
 new BlendServiceClient({
-  baseURL: 'https://your-backend.example.com', // default: BENTO_BASE_URL env or http://localhost:4001
   timeoutMs: 30_000,                           // default: 30000ms
-  tokenStore: customStore,                     // optional: replace FileTokenStore
 });
 ```
 
@@ -167,33 +200,40 @@ const status = await agentAuth.getClaimStatus();
 await agentAuth.regenerateClaimToken();
 ```
 
-### Wallet Position
+### Wallet Balance
 
 ```ts
 import { embeddedWallet } from '@bentoguard/protocol-sdk';
 
-const position = await embeddedWallet.getPosition(client);
-console.log(position); // balances, Stellar address, network info
+const balance = await embeddedWallet.getWalletBalance(client);
+console.log(balance); // { balances: [{ asset, amount }], ... }
 ```
 
 ### Transfer Asset
 
 ```ts
 await embeddedWallet.transferAsset(client, {
-  toAddress: 'GABC...',
-  tokenId: 'USDC',
+  targetPubkey: 'GABC...',
+  assetPubkey: 'CDLZ...',   // use asset contract pubkey, or 'XLM' for native
   amount: '25',
+  instruction: 'Transfer 25 XLM to GABC...',   // required to trigger Bento Guard
+  resolvedTargets: {
+    receiverPubkey: 'GABC...',
+    assetPubkeys: ['CDLZ...'],
+  },
 });
 ```
 
-### Create & Approve Transaction
+### Create & Approve Transaction (manual flow)
 
 ```ts
-const { txId } = await embeddedWallet.createTransaction(client, {
-  params: { to: 'GABC...', amount: '10' },
+// Step 1: create draft
+const draft = await embeddedWallet.createTransaction(client, {
+  params: { to: 'GABC...', amount: '10', token: 'XLM' },
 });
 
-await embeddedWallet.approveTransaction(client, { txId });
+// Step 2: approve and broadcast
+await embeddedWallet.approveTransaction(client, { txId: draft.transaction_id });
 ```
 
 ### Read Market State
@@ -209,20 +249,29 @@ const position = await lendingPool.getPosition(client);
 ### Lending Actions
 
 ```ts
-await lendingPool.deposit(client, { assetId: 'USDC', amount: '100' });
-await lendingPool.borrow(client, { assetId: 'USDC', amount: '50' });
-await lendingPool.repay(client, { assetId: 'USDC', amount: '50' });   // or 'max'
-await lendingPool.withdraw(client, { assetId: 'USDC', amount: '10' }); // or 'max'
+await lendingPool.deposit(client, {
+  assetPubkey: 'CDLZ...',
+  amount: '100',
+  instruction: 'Deposit 100 XLM into the lending pool',
+  resolvedTargets: { assetPubkeys: ['CDLZ...'] },
+});
+
+await lendingPool.borrow(client, { assetPubkey: 'CDLZ...', amount: '50' });
+await lendingPool.repay(client, { assetPubkey: 'CDLZ...', amount: '50' });   // or 'max'
+await lendingPool.withdraw(client, { assetPubkey: 'CDLZ...', amount: '10' }); // or 'max'
 ```
+
+> **Note:** `assetPubkey` replaces the old `assetId` field. All lending request types now use `assetPubkey`.
 
 ### Batch (Submit)
 
 ```ts
 await lendingPool.submit(client, {
   requests: [
-    { actionType: 'REPAY', assetId: 'USDC', amount: '25' },
-    { actionType: 'WITHDRAW', assetId: 'USDC', amount: '10' },
+    { actionType: 'REPAY', assetPubkey: 'CDLZ...', amount: '25' },
+    { actionType: 'WITHDRAW', assetPubkey: 'CDLZ...', amount: '10' },
   ],
+  instruction: 'Repay 25 and withdraw 10',
 });
 ```
 
@@ -240,7 +289,7 @@ client.clearCredentials();
 import { utils } from '@bentoguard/protocol-sdk';
 
 try {
-  await lendingPool.deposit(client, { assetId: 'USDC', amount: '100' });
+  await lendingPool.deposit(client, { assetPubkey: 'CDLZ...', amount: '100' });
 } catch (error) {
   if (error instanceof utils.BentoAuthError) {
     // 401 — apiKey missing or invalid, check .bento-credentials
@@ -260,12 +309,21 @@ try {
 | `BentoConfigError` | Missing required config at startup |
 | `BentoError` | Generic SDK-level failure |
 
+**Risk Engine Verdicts:**
+
+| Verdict | SDK behaviour |
+|---------|---------------|
+| `ALLOW` | Transaction is approved and broadcasted automatically |
+| `ESCALATED` | Returns `{ status: 'escalated', transaction_id, reason }` — awaits manual review |
+| `BLOCKED` | Throws `Error: Security Gate Blocked Action: <reason>` |
+
 ## Best Practices
 
 - Rely on `.bento-credentials` written by `registerAgent()` — do not hardcode API keys.
 - Reuse a single `BlendServiceClient` instance per process.
-- Always read `getPosition` and `getReserves` before executing a lending action.
+- Always read `getWalletBalance` and `getReserves` before executing a lending action.
 - Pass `'max'` for `amount` on `repay` and `withdraw` to close positions cleanly.
+- Provide `instruction` and `resolvedTargets` on all write operations so the Bento Guard risk engine has full context to make correct decisions.
 - Use `submit` for atomic multi-step operations.
 - Keep retry logic in your application layer — catch `BentoAPIError`, inspect `statusCode`, decide there.
 - Call `client.clearCredentials()` when a session ends or becomes invalid.
@@ -277,18 +335,18 @@ try {
 | Register agent | `agentAuth.registerAgent({ name, handle, quote })` | ✗ |
 | Claim status | `agentAuth.getClaimStatus()` | ✓ |
 | Regenerate claim | `agentAuth.regenerateClaimToken()` | ✓ |
-| Wallet position | `embeddedWallet.getPosition(client)` | ✓ |
-| Transfer asset | `embeddedWallet.transferAsset(client, { toAddress, tokenId, amount })` | ✓ |
+| Wallet balance | `embeddedWallet.getWalletBalance(client)` | ✓ |
+| Transfer asset | `embeddedWallet.transferAsset(client, { targetPubkey, assetPubkey, amount, instruction?, resolvedTargets? })` | ✓ |
 | Create transaction | `embeddedWallet.createTransaction(client, { params })` | ✓ |
 | Approve transaction | `embeddedWallet.approveTransaction(client, { txId })` | ✓ |
 | Pool info | `lendingPool.getInfo(client)` | ✗ |
 | Pool reserves | `lendingPool.getReserves(client)` | ✗ |
 | Agent position | `lendingPool.getPosition(client)` | ✓ |
-| Deposit | `lendingPool.deposit(client, { assetId, amount })` | ✓ |
-| Borrow | `lendingPool.borrow(client, { assetId, amount })` | ✓ |
-| Repay | `lendingPool.repay(client, { assetId, amount })` | ✓ |
-| Withdraw | `lendingPool.withdraw(client, { assetId, amount })` | ✓ |
-| Submit (batch) | `lendingPool.submit(client, { requests })` | ✓ |
+| Deposit | `lendingPool.deposit(client, { assetPubkey, amount, instruction?, resolvedTargets? })` | ✓ |
+| Borrow | `lendingPool.borrow(client, { assetPubkey, amount, instruction?, resolvedTargets? })` | ✓ |
+| Repay | `lendingPool.repay(client, { assetPubkey, amount, instruction?, resolvedTargets? })` | ✓ |
+| Withdraw | `lendingPool.withdraw(client, { assetPubkey, amount, instruction?, resolvedTargets? })` | ✓ |
+| Submit (batch) | `lendingPool.submit(client, { requests, instruction?, resolvedTargets? })` | ✓ |
 
 > **Auth Required** = needs `x-bento-api-key` from `.bento-credentials`
 
@@ -318,8 +376,14 @@ No. Handle retries at your application or orchestration layer.
 **8. What if I need to change the backend URL?**
 Set `BENTO_BASE_URL` env or pass `baseURL` to `BlendServiceClient`.
 
-**9. Where should I start reading the source?**
-`src/core/blend-service-client.ts`, then the module folders.
+**9. What changed from v0.1.x?**
+- `assetId` → renamed to `assetPubkey` in all `PoolActionRequest` and `SubmitActionRequest` types
+- `toAddress` / `tokenId` → renamed to `targetPubkey` / `assetPubkey` in `TransferAssetRequest`
+- All agent write operations now go through the 3-step Bento Guard security pipeline (`executeSecureAgentAction`)
+- Job polling (`postJobAndWait`) removed — all endpoints are now synchronous
+
+**10. Where should I start reading the source?**
+`src/core/bento-client.ts`, then `src/utils/security.ts` for the secure action pipeline, then the module folders.
 
 ## Troubleshooting
 
@@ -327,13 +391,17 @@ Set `BENTO_BASE_URL` env or pass `baseURL` to `BlendServiceClient`.
 
 **`403 Forbidden`** — Agent claim may be required. Call `agentAuth.getClaimStatus()` and share `claimToken` with the owner.
 
-**`Insufficient balance`** — Call `embeddedWallet.getPosition(client)` before retrying. Never execute without confirming balance.
+**`Insufficient balance`** — Call `embeddedWallet.getWalletBalance(client)` before retrying. Never execute without confirming balance.
 
 **`RPC timeout`** — Increase `timeoutMs` or check backend connectivity.
 
 **`Module not found`** — Verify import path matches the exported module namespace from `@bentoguard/protocol-sdk`.
 
 **`Endpoint mismatch`** — Use `buildEndpoint(Version, Module, path)` rather than hardcoding strings.
+
+**`Security Gate Blocked Action`** — The risk engine rejected the transaction. Check the `reason` in the error message. Ensure `resolvedTargets` accurately reflects the transaction's actual targets.
+
+**`status: 'escalated'`** — The transaction is pending manual review in the Bento dashboard. The `transaction_id` is returned so you can track it.
 
 ## Contributing
 

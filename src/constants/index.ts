@@ -1,7 +1,5 @@
 export const CREDENTIALS_FILE = '.bento-credentials';
 export const DEFAULT_TIMEOUT_MS = 30_000;
-export const DEFAULT_POLL_INTERVAL_MS = 2000;
-export const DEFAULT_MAX_POLL_ATTEMPTS = 60;
 
 export enum BentoEnviroment {
   PROD = 'production',
@@ -25,6 +23,7 @@ export enum Module {
   AUTH = 'agents/auth',
   EMBEDDED_WALLET = 'embedded-wallet',
   JOBS = 'jobs',
+  RISK_ENGINE = 'risk-engine',
 }
 
 export const NETWORK_CONFIG: Record<BentoEnviroment, { endpoint: string; defaultTimeout: number }> = {

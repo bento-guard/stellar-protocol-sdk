@@ -6,10 +6,14 @@ export interface ApproveTransactionRequest {
   txId: string;
 }
 
+import { ResolvedTargets } from './lending-pool';
+
 export interface TransferAssetRequest {
-  toAddress: string;
-  tokenId: string;
+  targetPubkey: string;
+  assetPubkey: string;
   amount: string;
+  instruction?: string;
+  resolvedTargets?: ResolvedTargets;
 }
 
 export interface EmbeddedWalletPosition {

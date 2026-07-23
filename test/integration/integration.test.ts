@@ -4,7 +4,7 @@ import { getReserves } from '../../src/modules/lending_pool/get-reserves';
 import { getPosition as getLendingPoolPosition } from '../../src/modules/lending_pool/get-position';
 import { deposit } from '../../src/modules/lending_pool/deposit';
 import { submit } from '../../src/modules/lending_pool/submit';
-import { getPosition as getWalletPosition } from '../../src/modules/embedded_wallet/get-position';
+import { getWalletBalance as getWalletPosition } from '../../src/modules/embedded_wallet/get-position';
 import { createTransaction } from '../../src/modules/embedded_wallet/create-transaction';
 import { approveTransaction } from '../../src/modules/embedded_wallet/approve-transaction';
 import { transferAsset } from '../../src/modules/embedded_wallet/transfer';
