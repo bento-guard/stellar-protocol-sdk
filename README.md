@@ -35,6 +35,63 @@ All agent write operations (transfer, lending actions) automatically pass throug
 2. Run the Bento Guard Risk Engine
 3. Approve and broadcast (if ALLOWED), or hold for review (if ESCALATED)
 
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Developer as Developer / Agent
+    participant SDK as Bento Stellar SDK
+    participant Backend as Bento Backend
+    participant Guard as Bento Guard (Risk)
+    actor Human as Human Admin (Bento UI)
+    participant Stellar as Stellar Network
+
+    %% 1. Registration & Auth
+    rect rgb(240, 248, 255)
+        note right of Developer: 1. Registration Phase
+        Developer->>SDK: registerAgent()
+        SDK->>Backend: Create Identity
+        Backend-->>SDK: API Key & Agent ID
+        SDK->>SDK: Auto-save to .bento-credentials
+    end
+
+    %% 2. Read Operations
+    rect rgb(245, 245, 245)
+        note right of Developer: 2. Read Operations (Data Fetching)
+        Developer->>SDK: getWalletBalance() / getReserves()
+        SDK->>Backend: Query Data
+        Backend-->>SDK: Return Data
+        SDK-->>Developer: Data payload
+    end
+
+    %% 3. Write Operations & Risk Engine
+    rect rgb(255, 245, 230)
+        note right of Developer: 3. Write Operations (Secure Execution Pipeline)
+        Developer->>SDK: Request Action (e.g., Transfer / Lend)
+        SDK->>Backend: 3a. Create Transaction Draft
+        Backend-->>SDK: Draft Created (Pending)
+        
+        SDK->>Guard: 3b. Request Risk Evaluation
+        Guard-->>SDK: Risk Decision (ALLOWED or ESCALATED)
+
+        alt is ALLOWED (Low Risk)
+            SDK->>Backend: 3c. Approve Transaction
+            Backend->>Stellar: Sign & Broadcast to Blockchain
+            Stellar-->>Backend: Confirmed
+            Backend-->>SDK: Success (Transaction Hash)
+            SDK-->>Developer: Operation Complete
+            
+        else is ESCALATED (High Risk / Suspicious)
+            SDK-->>Developer: Status: HELD FOR REVIEW
+            
+            note over Human, Backend: Asynchronous Manual Review Process
+            Human->>Backend: Log into Bento UI to review draft
+            Human->>Backend: Manually Approve (or Reject)
+            Backend->>Stellar: Sign & Broadcast to Blockchain
+            Stellar-->>Backend: Confirmed
+        end
+    end
+```
+
 Credentials (`agentId` and `apiKey`) are persisted to a `.bento-credentials` file automatically on first registration. Subsequent runs load them transparently — no manual configuration needed.
 
 ## Features
